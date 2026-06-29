@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Manager - All Tasks</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+        body { background-color: #121212; color: #FFFFFF; padding: 40px 20px; display: flex; flex-direction: column; align-items: center; }
+        .header { max-width: 800px; width: 100%; margin-bottom: 30px; text-align: left; }
+        h1 { color: #FFD700; letter-spacing: 1px; }
+        .task-list { max-width: 800px; width: 100%; display: flex; flex-direction: column; gap: 15px; }
+        .task-card { background-color: #1e1e1e; border-left: 5px solid #FFD700; padding: 20px; border-radius: 6px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        .task-title { color: #FFD700; font-size: 1.3rem; margin-bottom: 8px; font-weight: bold; }
+        .task-desc { color: #BBBBBB; font-size: 1rem; margin-bottom: 12px; line-height: 1.4; }
+        .meta-tags { display: flex; gap: 15px; font-size: 0.85rem; color: #888888; }
+        .tag { background-color: #2a2a2a; padding: 4px 10px; border-radius: 4px; border: 1px solid #444; }
+        .priority-tag { color: #FFD700; font-weight: bold; }
+        .status-select {
+            background-color: #2a2a2a;
+            border: 1px solid #FFD700;
+            color: #FFFFFF;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            outline: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1 th:text="'Hi! ' + ${currentUser.getUsername()} + ', Your Tasks:'" > Hi </h1>
+
+    <div style="float: right; margin-top: -35px; display: flex; gap: 10px;">
+        <a th:href="@{/task/new}"
+           style="background-color: #FFD700; color: #121212; padding: 8px 16px; text-decoration: none; border-radius: 4px; font-weight: bold;">
+            + Add Task
+        </a>
+
+        <button onclick="document.getElementById('profile-section').style.display='block'"
+                style="background-color: #2a2a2a; color: #FFD700; border: 1px solid #FFD700; padding: 8px 16px; border-radius: 4px; font-weight: bold; cursor: pointer;">
+            Profile Settings
+        </button>
+        <form th:action="@{/logout}" method="POST" style="display: inline; margin: 0;">
+            <button type="submit"
+                    onclick="return confirm('Are you sure you want to log out?');"
+                    style="background-color: #ff4d4d; color: #ffffff; border: none; padding: 8px 16px; border-radius: 4px; font-weight: bold; cursor: pointer;">
+                Logout
+            </button>
+        </form>
+    </div>
+
+    <div id="profile-section" style="display: none; background-color: #1e1e1e; border: 2px solid #FFD700; padding: 20px; border-radius: 6px; margin-top: 20px; width: 100%; max-width: 400px;">
+        <h3 style="color: #FFD700; margin-bottom: 15px;">Manage Profile</h3>
+
+        <form th:action="@{/edit}" method="POST" style="margin-bottom: 15px;">
+            <div style="margin-bottom: 10px;">
+                <label style="color: #bbb; display: block; font-size: 0.85rem; margin-bottom: 5px;">New Username</label>
+                <input type="text" name="username" placeholder="Update username" th:value="${currentUser.getUsername()}" required
+                       style="width: 100%; padding: 8px; background: #2a2a2a; border: 1px solid #444; color: #fff; border-radius: 4px;">
+            </div>
+            <div style="margin-bottom: 15px;">
+                <label style="color: #bbb; display: block; font-size: 0.85rem; margin-bottom: 5px;">New Email Address</label>
+                <input type="email" name="email" placeholder="Update email"  th:value="${currentUser.getEmail()}" required
+                       style="width: 100%; padding: 8px; background: #2a2a2a; border: 1px solid #444; color: #fff; border-radius: 4px;">
+            </div>
+            <button type="submit" style="background-color: #FFD700; color: #121212; border: none; padding: 6px 12px; font-weight: bold; border-radius: 4px; cursor: pointer;">
+                Save Profile
+            </button>
+            <button type="button" onclick="document.getElementById('profile-section').style.display='none'"
+                    style="background: none; border: 1px solid #888; color: #888; padding: 6px 12px; border-radius: 4px; margin-left: 10px; cursor: pointer;">
+                Cancel
+            </button>
+        </form>
+
+        <hr style="border: 0; border-top: 1px solid #444; margin: 15px 0;">
+
+        <form th:action="@{/delete}" method="POST"
+              onclick="return confirm('CRITICAL: Are you absolutely sure you want to completely delete your profile account? This will erase all your stored tasks permanently.');">
+            <button type="submit" style="background-color: #ff4d4d; color: white; border: none; padding: 8px 14px; font-weight: bold; border-radius: 4px; cursor: pointer; width: 100%;">
+                Permanently Delete My Account
+            </button>
+        </form>
+    </div>
+</div>
+
+<div class="task-list">
+    <div class="task-card" th:each="task : ${tasksList}">
+        <a th:href="@{/task/edit/fetch/{id}(id=${task.taskId})}"
+           style="color: #FFD700; text-decoration: none; font-size: 0.85rem; float: right; border: 1px solid #FFD700; padding: 2px 8px; border-radius: 4px;">
+            Edit
+        </a>
+
+        <form th:action="@{/task/delete/{id}(id=${task.taskId})}" method="POST" style="display: inline; float: right;">
+            <input type="hidden" name="_method" value="DELETE" />
+
+            <button type="submit"
+                    onclick="return confirm('Are you sure you want to delete this task?');"
+                    style="background: none; border: 1px solid #ff4d4d; color: #ff4d4d; padding: 2px 8px; border-radius: 4px; font-size: 0.85rem; cursor: pointer;">
+                Delete
+            </button>
+        </form>
+
+        <div class="task-title" th:text="${task.title}">Task Title Placeholder</div>
+        <div class="task-desc" th:text="${task.description}">Task Description Placeholder</div>
+        <div class="meta-tags">
+            <span class="tag priority-tag" th:text="${task.taskPriority}">HIGH</span>
+            <form th:action="@{/task/update-status/{id}(id=${task.taskId})}" method="POST" style="display: inline;">
+                <select name="taskStatus" class="status-select" onchange="this.form.submit()">
+
+                    <option th:if="${task.taskStatus.name() == 'OVERDUE'}" value="OVERDUE" selected>OVERDUE</option>
+
+                    <option th:each="status : ${statuses}"
+                            th:value="${status}"
+                            th:text="${status}"
+                            th:selected="${status == task.taskStatus}"></option>
+                </select>
+            </form>
+            <span class="tag" th:text="${task.dueDate}">2026-06-30</span>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
