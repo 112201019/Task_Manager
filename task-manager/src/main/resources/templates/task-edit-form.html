@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Manager - Edit Task</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+        body { background-color: #121212; color: #FFFFFF; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+        .form-card { width: 100%; max-width: 500px; padding: 40px 30px; border-radius: 12px; background-color: #1e1e1e; border: 2px solid #FFD700; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); }
+        h2 { color: #FFD700; font-size: 2rem; margin-bottom: 25px; text-transform: uppercase; text-align: center; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; color: #BBBBBB; margin-bottom: 8px; font-size: 0.9rem; }
+        input, textarea, select { width: 100%; padding: 12px; background-color: #2a2a2a; border: 1px solid #444444; border-radius: 6px; color: #FFFFFF; font-size: 1rem; transition: border-color 0.3s; }
+        input:focus, textarea:focus, select:focus { outline: none; border-color: #FFD700; }
+        textarea { resize: vertical; min-height: 100px; }
+        .btn-submit { width: 100%; background-color: #FFD700; color: #121212; padding: 12px; font-weight: bold; border: none; border-radius: 6px; cursor: pointer; transition: background-color 0.3s; margin-top: 10px; font-size: 1rem; }
+        .btn-submit:hover { background-color: #FFFFFF; }
+        .cancel-link { display: block; text-align: center; margin-top: 20px; color: #888888; text-decoration: none; font-size: 0.9rem; }
+        .cancel-link:hover { color: #FFD700; }
+    </style>
+</head>
+<body>
+
+<div class="form-card">
+    <h2>Edit Task</h2>
+
+    <form th:action="@{/task/edit/{id}(id=${taskId})}" th:object="${taskRequest}" method="POST">
+
+        <input type="hidden" th:field="*{userId}" />
+
+        <div class="form-group">
+            <label for="title">Task Title</label>
+            <input type="text" id="title" th:field="*{title}" required>
+        </div>
+
+        <div class="form-group">
+            <label for="description">Description</label>
+            <textarea id="description" th:field="*{description}"></textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="taskPriority">Priority</label>
+            <select id="taskPriority" th:field="*{taskPriority}" required>
+                <option th:each="priority : ${priorities}" th:value="${priority}" th:text="${priority}"></option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="dueDate">Due Date & Time</label>
+            <input type="datetime-local" id="dueDate" name="dueDate" th:value="${#temporals.format(taskRequest.dueDate, 'yyyy-MM-dd''T''HH:mm')}" >
+        </div>
+
+        <button type="submit" class="btn-submit">Save Changes</button>
+    </form>
+
+</div>
+
+</body>
+</html>
