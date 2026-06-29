@@ -24,9 +24,11 @@ public class Tasks {
 
     private String description;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private TaskPriority taskPriority;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private TaskStatusType taskStatus;
 

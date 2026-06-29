@@ -4,6 +4,8 @@ import com.projects.task_manager.dto.AddUserRequestDto;
 import com.projects.task_manager.dto.EditUserDto;
 import com.projects.task_manager.dto.UserDto;
 
+import java.util.List;
+
 public interface UserServiceInterface {
 
     UserDto createUser(AddUserRequestDto addUserRequestDto);
@@ -16,4 +18,5 @@ public interface UserServiceInterface {
 
     UserDto fetchUser(String number);
 
+    List<UserDto> getAllUsers();
 }

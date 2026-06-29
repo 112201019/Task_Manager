@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard</title>
+    <style>
+        body { background-color: #121212; color: #FFFFFF; font-family: 'Segoe UI', sans-serif; padding: 40px; }
+        h1, h2 { color: #FFD700; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 40px; background-color: #1e1e1e; }
+        th, td { padding: 12px; border: 1px solid #444; text-align: left; }
+        th { background-color: #2a2a2a; color: #FFD700; }
+        .btn-delete { background-color: #ff4d4d; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
+        .btn-back { background-color: #2a2a2a; color: #FFD700; text-decoration: none; padding: 10px 20px; border-radius: 4px; border: 1px solid #FFD700; }
+    </style>
+</head>
+<body>
+
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <h1>System Administration</h1>
+    <a th:href="@{/task/getall}" class="btn-back">Back to My Tasks</a>
+</div>
+
+<h2>All Registered Users</h2>
+<table>
+    <tr>
+        <th>User ID</th>
+        <th>Username</th>
+        <th>Email</th>
+        <th>Admin Action</th>
+    </tr>
+    <tr th:each="user : ${usersList}">
+        <td th:text="${user.userId}">ID</td>
+        <td th:text="${user.username}">Name</td>
+        <td th:text="${user.email}">Email</td>
+        <td>
+            <form th:action="@{/admin/delete-user/{id}(id=${user.userId})}" method="POST" onsubmit="return confirm('WARNING: This will delete the user and ALL their tasks! Proceed?');">
+                <button type="submit" class="btn-delete">Delete User</button>
+            </form>
+        </td>
+    </tr>
+</table>
+
+<h2>System-Wide Tasks</h2>
+<table>
+    <tr>
+        <th>Task ID</th>
+        <th>Owner (User ID)</th>
+        <th>Title</th>
+        <th>Status</th>
+        <th>Admin Action</th>
+    </tr>
+    <tr th:each="task : ${tasksList}">
+        <td th:text="${task.taskId}">ID</td>
+        <td th:text="${task.userId}" style="color: #aaa;">Owner</td>
+        <td th:text="${task.title}">Title</td>
+        <td th:text="${task.taskStatus}">Status</td>
+        <td>
+            <form th:action="@{/admin/delete-task/{id}(id=${task.taskId})}" method="POST">
+                <button type="submit" class="btn-delete">Delete Task</button>
+            </form>
+        </td>
+    </tr>
+</table>
+
+</body>
+</html>
