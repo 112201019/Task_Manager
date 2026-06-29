@@ -21,7 +21,7 @@ import java.time.LocalDateTime; // Make sure to add this import at the top
 public class TasksService implements TasksServiceInterface{
 
     private final UsersRepository UsersRepository;
-    private final TasksRepository TasksRepository;
+    private final TasksRepository tasksRepository;
 
     //create new tasks
     @Transactional
@@ -42,7 +42,7 @@ public class TasksService implements TasksServiceInterface{
         newTask.setUser(user);
         user.getTasks().add(newTask);
 
-        newTask=TasksRepository.save(newTask);
+        newTask= tasksRepository.save(newTask);
         new TaskDto(
                 newTask.getTaskId(),
                 newTask.getTitle(),
@@ -66,7 +66,7 @@ public class TasksService implements TasksServiceInterface{
                     && task.getTaskStatus() != TaskStatusType.OVERDUE
                     && task.getTaskStatus() != TaskStatusType.DELETED) {
                 task.setTaskStatus(TaskStatusType.OVERDUE);
-                TasksRepository.save(task);
+                tasksRepository.save(task);
             }
         }
 
@@ -85,7 +85,7 @@ public class TasksService implements TasksServiceInterface{
 
     @Override
     public void updateTask(Long id, TaskRequestDto requestDto) {
-        Tasks task = TasksRepository.findById(id)
+        Tasks task = tasksRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Task not found to update."));
         if(!Objects.equals(requestDto.getTitle(), task.getTitle())){
             task.setTitle(requestDto.getTitle());
@@ -107,7 +107,7 @@ public class TasksService implements TasksServiceInterface{
         if(requestDto.getDueDate() != task.getDueDate()){
             task.setDueDate(requestDto.getDueDate());
         }
-        TasksRepository.save(task);
+        tasksRepository.save(task);
         new TaskDto(
                 task.getTaskId(),
                 task.getTitle(),
@@ -121,17 +121,17 @@ public class TasksService implements TasksServiceInterface{
 
     @Override
     public void deleteTask(Long id) {
-        if(!TasksRepository.existsById(id)){
+        if(!tasksRepository.existsById(id)){
             throw new EntityNotFoundException("Task with id " + id + " doesn't exist");
         }
-        Tasks task=TasksRepository.findById(id).orElseThrow();
+        Tasks task= tasksRepository.findById(id).orElseThrow();
         task.setTaskStatus(TaskStatusType.DELETED);
-        TasksRepository.save(task);
+        tasksRepository.save(task);
     }
 
     @Override
     public TaskDto fetchTask(Long id) {
-        Tasks existingTask = TasksRepository.findById(id)
+        Tasks existingTask = tasksRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Task not found with ID: " + id));
         return TaskDto.builder()
                 .taskId(existingTask.getTaskId())
@@ -144,5 +144,20 @@ public class TasksService implements TasksServiceInterface{
                 .userId(existingTask.getUser().getUserId())
                 .build();
     }
+
+    @Override
+    public List<TaskDto> getAllTasksAdmin() {
+        return tasksRepository.findAll().stream().map(
+                task -> new TaskDto(
+                        task.getTaskId(),
+                        task.getTitle(),
+                        task.getDescription(),
+                        task.getTaskPriority(),
+                        task.getTaskStatus(),
+                        task.getDueDate(),
+                        task.getUser().getUserId())
+                ).toList();
+    }
+
 
 }

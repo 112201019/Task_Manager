@@ -16,4 +16,6 @@ public interface TasksServiceInterface {
     void deleteTask(Long id); //delete task
 
     TaskDto fetchTask(Long id);
+
+    List<TaskDto> getAllTasksAdmin();
 }

@@ -12,6 +12,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.crypto.password4j.BcryptPassword4jPasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 import java.util.Objects;
 
 import static com.projects.task_manager.service.implementations.isNumber.isNumeric;
@@ -41,6 +43,7 @@ public class UsersService implements UserServiceInterface {
                 .username(addUserRequestDto.getUsername())
                 .email(addUserRequestDto.getEmail())
                 .password(passwordEncoder.encode(addUserRequestDto.getPassword()))
+                .role("USER")
                 .build();
         Users nUser = UsersRepository.save(newUser);
         return new UserDto(nUser.getUserId(), nUser.getUsername(), nUser.getEmail());
@@ -53,6 +56,7 @@ public class UsersService implements UserServiceInterface {
         user.setUsername(ud.getUsername());
         UsersRepository.save(user);
     }
+
     @Override
     public void deleteUser(Long id) {
         if (!UsersRepository.existsById(id)) {
@@ -60,7 +64,6 @@ public class UsersService implements UserServiceInterface {
         }
         UsersRepository.deleteById(id);
     }
-
     public Boolean authenticateUser(String Id, String password){
         Users user = null;
         if(isNumeric(Id)) {
@@ -70,5 +73,15 @@ public class UsersService implements UserServiceInterface {
             user = UsersRepository.findByEmail(Id).orElseThrow();
         }
         return (Objects.equals(user.getPassword(), password));
+    }
+
+    @Override
+    public List<UserDto> getAllUsers() {
+        return UsersRepository.findAll().stream().map(
+                        user -> new UserDto(
+                                user.getUserId(),
+                                user.getUsername(),
+                                user.getEmail()))
+                .toList();
     }
 }
