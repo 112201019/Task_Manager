@@ -44,4 +44,13 @@ public class Users implements UserDetails {
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority("ROLE_" + this.role));
     }
+
+    @Override
+    public String getUsername() {
+        return String.valueOf(this.userId);
+    }
+
+    public String getDisplayName() {
+        return this.username;
+    }
 }
