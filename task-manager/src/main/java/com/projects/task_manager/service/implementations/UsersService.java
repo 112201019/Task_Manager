@@ -26,15 +26,9 @@ public class UsersService implements UserServiceInterface {
     private final TasksRepository TasksRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public UserDto fetchUser(String loginIdentifier) {
-        Users user = null;
-        if(isNumeric(loginIdentifier)) {
-            user = UsersRepository.findById((long) Double.parseDouble(loginIdentifier)).orElseThrow();
-        }
-        else{
-            user = UsersRepository.findByEmail(loginIdentifier).orElseThrow();
-        }
-        return new UserDto(user.getUserId(),user.getUsername(),user.getEmail());
+    public UserDto fetchUser(Long id) {
+        Users user = UsersRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("User not found with email: " + id));
+        return new UserDto(user.getUserId(),user.getDisplayName(),user.getEmail());
     }
 
     @Override
@@ -46,7 +40,7 @@ public class UsersService implements UserServiceInterface {
                 .role("USER")
                 .build();
         Users nUser = UsersRepository.save(newUser);
-        return new UserDto(nUser.getUserId(), nUser.getUsername(), nUser.getEmail());
+        return new UserDto(nUser.getUserId(), nUser.getDisplayName(), nUser.getEmail());
     }
 
     @Override
@@ -64,24 +58,26 @@ public class UsersService implements UserServiceInterface {
         }
         UsersRepository.deleteById(id);
     }
-    public Boolean authenticateUser(String Id, String password){
-        Users user = null;
-        if(isNumeric(Id)) {
-            user = UsersRepository.findById((long) Double.parseDouble(Id)).orElseThrow();
-        }
-        else{
-            user = UsersRepository.findByEmail(Id).orElseThrow();
-        }
-        return (Objects.equals(user.getPassword(), password));
-    }
-
     @Override
     public List<UserDto> getAllUsers() {
         return UsersRepository.findAll().stream().map(
                         user -> new UserDto(
                                 user.getUserId(),
-                                user.getUsername(),
+                                user.getDisplayName(),
                                 user.getEmail()))
                 .toList();
     }
+
+//now handled by authcontroller
+    //    public Boolean authenticateUser(String Id, String password){
+//        Users user = null;
+//        if(isNumeric(Id)) {
+//            user = UsersRepository.findById((long) Double.parseDouble(Id)).orElseThrow();
+//        }
+//        else{
+//            user = UsersRepository.findByEmail(Id).orElseThrow();
+//        }
+//        return (Objects.equals(user.getPassword(), password));
+
+//    }
 }

@@ -16,7 +16,7 @@ public interface UserServiceInterface {
 
 //    Boolean authenticateUser(String Id, String password); This is handled by spring security
 
-    UserDto fetchUser(String number);
+    UserDto fetchUser(Long number);
 
     List<UserDto> getAllUsers();
 }
