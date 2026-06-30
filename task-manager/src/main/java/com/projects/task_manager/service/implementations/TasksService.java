@@ -147,7 +147,7 @@ public class TasksService implements TasksServiceInterface{
 
     @Override
     public List<TaskDto> getAllTasksAdmin() {
-        return tasksRepository.findAll().stream().map(
+        return tasksRepository.getAllTasks().stream().map(
                 task -> new TaskDto(
                         task.getTaskId(),
                         task.getTitle(),
