@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>My Dashboard</title>
+    <style>
+        body { display: flex; flex-direction: column; align-items: center; margin-top: 20px; font-family: sans-serif; }
+        .section { width: 100%; max-width: 600px; border: 1px solid black; padding: 20px; margin-bottom: 20px; box-sizing: border-box; }
+        .header-bar { display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 600px; margin-bottom: 20px; border-bottom: 2px solid black; padding-bottom: 10px; }
+        input, select, textarea, button { width: 100%; margin-bottom: 10px; padding: 8px; box-sizing: border-box; }
+        .task-card { border: 1px solid black; padding: 15px; margin-bottom: 15px; }
+        .inline-btn { width: auto; padding: 5px 10px; margin: 0; }
+        hr { border-top: 1px dotted black; }
+    </style>
+</head>
+<body>
+
+    <div class="header-bar">
+        <h2>Welcome, <span id="displayUsername" style="color: #444;">User</span>!</h2>
+        <div>
+            <button id="adminBtn" class="inline-btn" onclick="window.location.href='admin.html'" style="display: none; background-color: #ffd700;">Admin Panel</button>
+            <button class="inline-btn" onclick="logout()">Logout</button>
+        </div>
+    </div>
+
+    <div class="section">
+        <h3>Profile Settings</h3>
+        <details>
+            <summary>Edit Profile & Password</summary>
+            <hr>
+            <h4>Update Profile</h4>
+            <input type="text" id="editUsername" placeholder="New Username">
+            <input type="email" id="editEmail" placeholder="New Email">
+            <button onclick="updateProfile()">Update Profile</button>
+            <hr>
+            <h4>Change Password</h4>
+            <input type="password" id="oldPass" placeholder="Old Password">
+            <input type="password" id="newPass" placeholder="New Password">
+            <button onclick="changePassword()">Change Password</button>
+            <hr>
+            <button onclick="deleteAccount()" style="color: white; background-color: #ff4d4d; border: 2px solid #cc0000;">Delete My Account</button>
+        </details>
+    </div>
+
+    <div class="section">
+        <h3 id="formTitle">Add New Task</h3>
+        <input type="text" id="title" placeholder="Title">
+        <textarea id="desc" placeholder="Description"></textarea>
+        <select id="priority">
+            <option value="EMERGENCY">Emergency</option>
+            <option value="HIGH">High</option>
+            <option value="NORMAL" selected>Normal</option>
+            <option value="LOW">Low</option>
+        </select>
+        <input type="datetime-local" id="dueDate">
+        <button id="saveBtn" onclick="saveTask()">Save Task</button>
+    </div>
+
+    <div class="section">
+        <h3>My Tasks</h3>
+        <div id="taskList"></div>
+    </div>
+
+    <script>
+        const API = 'http://localhost:8080/api';
+        const token = localStorage.getItem('jwt_token');
+        
+        if (!token) window.location.href = 'index.html';
+        
+        const headers = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token };
+        let editTaskId = null;
+
+        // --- JWT DECODER ---
+        try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            document.getElementById('displayUsername').innerText = payload.username;
+            document.getElementById('editUsername').value = payload.username;
+            document.getElementById('editEmail').value = payload.sub; 
+        } catch (e) {
+            console.error("Invalid token format");
+        }
+
+        // --- ADMIN CHECK ---
+        async function checkAdminAccess() {
+            try {
+                const res = await fetch(`${API}/admin/dashboard`, { headers });
+                if (res.ok) {
+                    document.getElementById('adminBtn').style.display = 'inline-block';
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        // --- TASKS API ---
+        async function loadTasks() {
+            // Simplified to ONLY hit /getall
+            const res = await fetch(`${API}/tasks/getall`, { headers });
+            if (!res.ok) return;
+            const tasks = await res.json();
+            
+            const list = document.getElementById('taskList');
+            list.innerHTML = tasks.length ? '' : '<p>No tasks found.</p>';
+            
+            tasks.forEach(t => {
+                let statusDropdownHtml = '';
+                if (t.taskStatus === 'OVERDUE') {
+                    statusDropdownHtml = `
+                        <option value="OVERDUE" disabled selected>Overdue (Action Required)</option>
+                        <option value="DONE">Done</option>
+                    `;
+                } else {
+                    statusDropdownHtml = `
+                        <option value="TO_DO" ${t.taskStatus === 'TO_DO' ? 'selected' : ''}>To Do</option>
+                        <option value="IN_PROGRESS" ${t.taskStatus === 'IN_PROGRESS' ? 'selected' : ''}>In Progress</option>
+                        <option value="DONE" ${t.taskStatus === 'DONE' ? 'selected' : ''}>Done</option>
+                    `;
+                }
+
+                list.innerHTML += `
+                    <div class="task-card">
+                        <h4 style="margin:0 0 10px 0">${t.title}</h4>
+                        <p style="margin:0 0 10px 0">${t.description}</p>
+                        <small>Priority: <b>${t.taskPriority}</b></small> | 
+                        <small>Status: 
+                            <select class="inline-btn" onchange="updateStatus('${t.taskId}', this.value)">
+                                ${statusDropdownHtml}
+                            </select>
+                        </small>
+                        <hr>
+                        <button class="inline-btn" onclick="setupEdit('${t.taskId}', '${t.title}', '${t.description}', '${t.taskPriority}')">Edit</button>
+                        <button class="inline-btn" onclick="deleteTask('${t.taskId}')">Delete</button>
+                    </div>
+                `;
+            });
+        }
+
+        async function saveTask() {
+            const payload = {
+                title: document.getElementById('title').value,
+                description: document.getElementById('desc').value,
+                taskPriority: document.getElementById('priority').value,
+                dueDate: document.getElementById('dueDate').value
+            };
+            const url = editTaskId ? `${API}/tasks/edit/${editTaskId}` : `${API}/tasks/save`;
+            const method = editTaskId ? 'PUT' : 'POST';
+            
+            await fetch(url, { method, headers, body: JSON.stringify(payload) });
+            
+            editTaskId = null;
+            document.getElementById('formTitle').innerText = "Add New Task";
+            document.getElementById('title').value = '';
+            document.getElementById('desc').value = '';
+            loadTasks();
+        }
+
+        function setupEdit(id, title, desc, priority) {
+            editTaskId = id;
+            document.getElementById('formTitle').innerText = "Edit Task";
+            document.getElementById('title').value = title;
+            document.getElementById('desc').value = desc;
+            document.getElementById('priority').value = priority;
+            window.scrollTo(0, 0);
+        }
+
+        async function updateStatus(id, status) {
+            await fetch(`${API}/tasks/update-status/${id}`, { method: 'PATCH', headers, body: JSON.stringify({ taskStatus: status }) });
+            loadTasks(); 
+        }
+
+        async function deleteTask(id) {
+            if (confirm("Delete task?")) {
+                await fetch(`${API}/tasks/delete/${id}`, { method: 'DELETE', headers });
+                loadTasks();
+            }
+        }
+
+        // --- USER API ---
+        async function updateProfile() {
+            const payload = { username: document.getElementById('editUsername').value, email: document.getElementById('editEmail').value };
+            const res = await fetch(`${API}/users/edit`, { method: 'PATCH', headers, body: JSON.stringify(payload) });
+            if (res.ok) {
+                alert("Profile updated! Please log in again to apply changes.");
+                logout();
+            } else {
+                alert("Update failed. Username or email might be taken.");
+            }
+        }
+
+        async function changePassword() {
+            const payload = { oldPassword: document.getElementById('oldPass').value, newPassword: document.getElementById('newPass').value };
+            const res = await fetch(`${API}/users/change-password`, { method: 'PATCH', headers, body: JSON.stringify(payload) });
+            if (res.ok) {
+                document.getElementById('oldPass').value = '';
+                document.getElementById('newPass').value = '';
+                alert("Password changed successfully!");
+            } else {
+                alert("Failed. Check old password.");
+            }
+        }
+
+        async function deleteAccount() {
+            if (confirm("WARNING: This will permanently delete your account and all tasks!")) {
+                await fetch(`${API}/users/delete`, { method: 'DELETE', headers });
+                logout();
+            }
+        }
+
+        function logout() { 
+            localStorage.removeItem('jwt_token'); 
+            window.location.href = 'index.html'; 
+        }
+
+        // Bootstrapping the application
+        checkAdminAccess();
+        loadTasks();
+    </script>
+</body>
+</html>
