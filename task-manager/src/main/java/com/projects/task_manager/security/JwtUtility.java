@@ -26,9 +26,10 @@ public class JwtUtility {
     public String generateToken(UserDetails userDetails) {
         Users user = (Users) userDetails;
         return Jwts.builder()
-                .subject(String.valueOf(user.getUserId()))
+                .claim("username", user.getDisplayName())
+                .subject(user.getEmail())
                 .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 10)) //10-hours
+                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 10))
                 .signWith(key)
                 .compact();
     }
@@ -37,12 +38,12 @@ public class JwtUtility {
     }
 
     public boolean isTokenValid(String token, UserDetails userDetails) {
-        final String tokenUserId = extractUsername(token);
+        final String tokenEmail = extractUsername(token);
         Users user = (Users) userDetails;
 
         boolean isExpired = isTokenExpired(token);
 
-        return (tokenUserId.equals(String.valueOf(user.getUserId()))) && !isExpired;
+        return (tokenEmail.equals(user.getEmail())) && !isExpired;
     }
 
     private boolean isTokenExpired(String token) {

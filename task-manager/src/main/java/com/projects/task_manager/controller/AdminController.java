@@ -16,6 +16,7 @@ import javax.management.DescriptorKey;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @Controller
 @RequestMapping("/api/admin") // 2. Standardized base route
@@ -37,16 +38,17 @@ public class AdminController {
     }
 
     @DeleteMapping("/delete-user/{userId}")
-    public ResponseEntity<Void> deleteUserAsAdmin(@PathVariable Long userId) {
+    public ResponseEntity<Void> deleteUserAsAdmin(@PathVariable UUID userId) {
         usersService.deleteUser(userId);
         return ResponseEntity.noContent().build(); // 204 No Content
     }
 
-    @DescriptorKey("/delete-task/{taskId}")
-    public ResponseEntity<Void> deleteTaskAsAdmin(@PathVariable Long taskId) {
+    @DeleteMapping("/delete-task/{taskId}")
+    public ResponseEntity<Void> deleteTaskAsAdmin(@PathVariable UUID taskId) {
         tasksService.deleteTask(taskId);
         return ResponseEntity.noContent().build();
     }
+    //
 
 
 }

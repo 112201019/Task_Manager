@@ -2,6 +2,7 @@ package com.projects.task_manager.controller;
 
 
 import com.projects.task_manager.dto.AddUserRequestDto;
+import com.projects.task_manager.dto.ChangePasswordDto;
 import com.projects.task_manager.dto.EditUserDto;
 import com.projects.task_manager.dto.UserDto;
 import com.projects.task_manager.entity.Users;
@@ -44,6 +45,12 @@ public class UserController {
     public ResponseEntity<Void> deleteUser(@AuthenticationPrincipal Users currentUser){
         usersService.deleteUser(currentUser.getUserId());
         return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/change-password")
+    public ResponseEntity<Void> changePassword(@AuthenticationPrincipal Users currentUser, @RequestBody ChangePasswordDto request) {
+        usersService.changePassword(currentUser.getUserId(), request);
+        return ResponseEntity.ok().build();
     }
 
 //    @PostMapping("/login")

@@ -1,6 +1,7 @@
 package com.projects.task_manager.service.implementations;
 
 import com.projects.task_manager.dto.AddUserRequestDto;
+import com.projects.task_manager.dto.ChangePasswordDto;
 import com.projects.task_manager.dto.EditUserDto;
 import com.projects.task_manager.dto.UserDto;
 import com.projects.task_manager.entity.Users;
@@ -15,8 +16,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Objects;
-
-import static com.projects.task_manager.service.implementations.isNumber.isNumeric;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -26,13 +26,20 @@ public class UsersService implements UserServiceInterface {
     private final TasksRepository TasksRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public UserDto fetchUser(Long id) {
+    public UserDto fetchUser(UUID id) {
         Users user = UsersRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("User not found with email: " + id));
         return new UserDto(user.getUserId(),user.getDisplayName(),user.getEmail());
     }
 
     @Override
     public UserDto createUser(AddUserRequestDto addUserRequestDto) {
+        // 1. CHECK FOR DUPLICATES FIRST!
+        if (UsersRepository.existsByUsername(addUserRequestDto.getUsername())) {
+            throw new IllegalArgumentException("That username is already taken!");
+        }
+        if (UsersRepository.existsByEmail(addUserRequestDto.getEmail())) {
+            throw new IllegalArgumentException("An account with that email already exists!");
+        }
         Users newUser=Users.builder()
                 .username(addUserRequestDto.getUsername())
                 .email(addUserRequestDto.getEmail())
@@ -52,7 +59,7 @@ public class UsersService implements UserServiceInterface {
     }
 
     @Override
-    public void deleteUser(Long id) {
+    public void deleteUser(UUID id) {
         if (!UsersRepository.existsById(id)) {
             throw new EntityNotFoundException("User not found");
         }
@@ -66,6 +73,18 @@ public class UsersService implements UserServiceInterface {
                                 user.getDisplayName(),
                                 user.getEmail()))
                 .toList();
+    }
+
+    @Override
+    public void changePassword(UUID userId, ChangePasswordDto request) {
+        Users user = UsersRepository.findById(userId).orElseThrow(() -> new EntityNotFoundException("User not found"));
+
+        if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
+            throw new IllegalArgumentException("Incorrect old password!");
+        }
+
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        UsersRepository.save(user);
     }
 
 //now handled by authcontroller
