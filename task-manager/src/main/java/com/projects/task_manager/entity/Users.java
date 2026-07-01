@@ -10,6 +10,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
 
 @Entity
 @Getter
@@ -20,13 +21,13 @@ import java.util.List;
 @Table(name = "users")
 public class Users implements UserDetails {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long userId;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID userId;
 
-    @Column(nullable = false, length = 100)
+    @Column(nullable = false, length = 100, unique = true)
     private String username;
 
-    @Column(nullable = false, unique = true, length = 100)
+    @Column(nullable = false, length = 100, unique = true)
     @Email
     private String email;
 
@@ -47,9 +48,10 @@ public class Users implements UserDetails {
 
     @Override
     public String getUsername() {
-        return String.valueOf(this.userId);
+        return this.email;
     }
 
+    // THE PUBLIC DISPLAY NAME
     public String getDisplayName() {
         return this.username;
     }

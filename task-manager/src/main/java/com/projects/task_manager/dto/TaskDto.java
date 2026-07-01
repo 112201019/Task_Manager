@@ -7,16 +7,17 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Data
 @AllArgsConstructor
 @Builder
 public class TaskDto {
-    private Long taskId;
+    private UUID taskId;
     private String title;
     private String description;
     private TaskPriority taskPriority;
     private TaskStatusType taskStatus;
     private LocalDateTime dueDate;
-    private Long userId;
+    private UUID userId;
 }

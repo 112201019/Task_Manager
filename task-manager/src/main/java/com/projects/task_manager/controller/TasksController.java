@@ -15,6 +15,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("api/tasks")
@@ -34,13 +35,13 @@ public class TasksController {
 
     @GetMapping("/getall")
     public ResponseEntity<List<TaskDto>> readTasks(@AuthenticationPrincipal Users currentUser){
-        Long user_id = (Long) currentUser.getUserId();
+        UUID user_id = (UUID) currentUser.getUserId();
         List<TaskDto> tasks = tasksService.getAllTasks(user_id);
         return ResponseEntity.ok(tasks);
     }
 
     @PutMapping("/edit/{task_id}")
-    public ResponseEntity<Void> updateTask(@PathVariable Long task_id, @RequestBody TaskRequestDto request){
+    public ResponseEntity<Void> updateTask(@PathVariable UUID task_id, @RequestBody TaskRequestDto request){
         TaskDto t = tasksService.fetchTask(task_id);
         request.setTaskStatus(t.getTaskStatus());
         request.setUserId(t.getUserId());
@@ -49,13 +50,13 @@ public class TasksController {
     }
 
     @DeleteMapping("/delete/{task_id}")
-    public ResponseEntity<Void> deleteStudent(@PathVariable Long task_id){
+    public ResponseEntity<Void> deleteStudent(@PathVariable UUID task_id){
         tasksService.deleteTask(task_id);
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/update-status/{task_id}")
-    public ResponseEntity<Void> updateStatus(@RequestBody TaskStatusUpdateDto taskStatus, @PathVariable Long task_id){
+    public ResponseEntity<Void> updateStatus(@RequestBody TaskStatusUpdateDto taskStatus, @PathVariable UUID task_id){
         TaskDto existingTask = tasksService.fetchTask(task_id);
         TaskRequestDto taskRequest = new TaskRequestDto();
         taskRequest.setTitle(existingTask.getTitle());

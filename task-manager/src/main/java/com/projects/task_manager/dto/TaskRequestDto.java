@@ -7,6 +7,7 @@ import lombok.Getter;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Data
 public class TaskRequestDto {
@@ -16,5 +17,5 @@ public class TaskRequestDto {
     private TaskStatusType taskStatus;
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
     private LocalDateTime dueDate;
-    private Long userId;
+    private UUID userId;
 }

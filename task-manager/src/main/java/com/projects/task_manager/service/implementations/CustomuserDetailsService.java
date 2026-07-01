@@ -14,14 +14,10 @@ import org.springframework.stereotype.Service;
 public class CustomuserDetailsService implements UserDetailsService {
 
     private final UsersRepository usersRepository;
-    @Override
-    public UserDetails loadUserByUsername(@NonNull String uId) throws UsernameNotFoundException {
-        try {
-            Long id = Long.parseLong(uId);
-            return usersRepository.findById(id)
-                    .orElseThrow(() -> new UsernameNotFoundException("User not found with ID: " + id));
 
-        } catch (NumberFormatException e) {
-            throw new UsernameNotFoundException("Invalid User ID format");
-        }    }
+    @Override
+    public UserDetails loadUserByUsername(@NonNull String loginIdentifier) throws UsernameNotFoundException {
+        return usersRepository.findByEmailOrUsername(loginIdentifier, loginIdentifier)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with ID/Email: " + loginIdentifier));
+    }
 }

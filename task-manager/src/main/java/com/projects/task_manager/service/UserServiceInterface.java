@@ -5,6 +5,7 @@ import com.projects.task_manager.dto.EditUserDto;
 import com.projects.task_manager.dto.UserDto;
 
 import java.util.List;
+import java.util.UUID;
 
 public interface UserServiceInterface {
 
@@ -12,11 +13,14 @@ public interface UserServiceInterface {
 
     void editUser(EditUserDto ud);
 
-    void deleteUser(Long id);
+    void deleteUser(UUID id);
 
 //    Boolean authenticateUser(String Id, String password); This is handled by spring security
 
-    UserDto fetchUser(Long number);
+    UserDto fetchUser(UUID number);
 
     List<UserDto> getAllUsers();
+
+    // Add this to the list of methods
+    void changePassword(java.util.UUID userId, com.projects.task_manager.dto.ChangePasswordDto request);
 }

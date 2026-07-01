@@ -16,6 +16,8 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Objects;
 import java.time.LocalDateTime; // Make sure to add this import at the top
+import java.util.UUID;
+
 @Service
 @RequiredArgsConstructor
 public class TasksService implements TasksServiceInterface{
@@ -26,7 +28,7 @@ public class TasksService implements TasksServiceInterface{
     //create new tasks
     @Transactional
     public void createNewTask(TaskRequestDto request){
-        Long userId = request.getUserId();
+        UUID userId = request.getUserId();
 
         Users user = UsersRepository.findById(request.getUserId())
                 .orElseThrow(() -> new EntityNotFoundException("User not found with ID: " + userId));
@@ -55,7 +57,7 @@ public class TasksService implements TasksServiceInterface{
     }
 
     @Override
-    public List<TaskDto> getAllTasks(Long userId) {
+    public List<TaskDto> getAllTasks(UUID userId) {
         Users user = UsersRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("User not found with ID: " + userId));
         List<Tasks> t=user.getTasks();
@@ -84,7 +86,7 @@ public class TasksService implements TasksServiceInterface{
     }
 
     @Override
-    public void updateTask(Long id, TaskRequestDto requestDto) {
+    public void updateTask(UUID id, TaskRequestDto requestDto) {
         Tasks task = tasksRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Task not found to update."));
         if(!Objects.equals(requestDto.getTitle(), task.getTitle())){
@@ -120,7 +122,7 @@ public class TasksService implements TasksServiceInterface{
     }
 
     @Override
-    public void deleteTask(Long id) {
+    public void deleteTask(UUID id) {
         if(!tasksRepository.existsById(id)){
             throw new EntityNotFoundException("Task with id " + id + " doesn't exist");
         }
@@ -130,7 +132,7 @@ public class TasksService implements TasksServiceInterface{
     }
 
     @Override
-    public TaskDto fetchTask(Long id) {
+    public TaskDto fetchTask(UUID id) {
         Tasks existingTask = tasksRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Task not found with ID: " + id));
         return TaskDto.builder()

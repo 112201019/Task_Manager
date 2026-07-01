@@ -6,10 +6,12 @@ import lombok.Data;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
+
 @Data
 @AllArgsConstructor
 public class UserDto {
-    private Long userId;
+    private UUID userId;
     private String username;
     private String email;
 }
