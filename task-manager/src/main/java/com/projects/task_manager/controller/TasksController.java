@@ -55,7 +55,7 @@ public class TasksController {
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/update-status/{task_id}")
+    @PatchMapping("/update-status/{task_id}")
     public ResponseEntity<Void> updateStatus(@RequestBody TaskStatusUpdateDto taskStatus, @PathVariable UUID task_id){
         TaskDto existingTask = tasksService.fetchTask(task_id);
         TaskRequestDto taskRequest = new TaskRequestDto();

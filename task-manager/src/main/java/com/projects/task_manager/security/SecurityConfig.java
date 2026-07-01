@@ -30,7 +30,7 @@ public class SecurityConfig {
 
 
         http
-//                .cors(Customizer.withDefaults())
+                .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/users/register", "/api/auth/login").permitAll()
@@ -42,21 +42,21 @@ public class SecurityConfig {
     }
 
 //    // 2. DEFINE THE EXACT BORDER RULES
-//    @Bean
-//    public CorsConfigurationSource corsConfigurationSource() {
-//        CorsConfiguration configuration = new CorsConfiguration();
-//
-//        // We are allowing standard local development ports (like VS Code Live Server or React)
-//        configuration.setAllowedOrigins(List.of("http://127.0.0.1:5500", "http://localhost:5500", "http://localhost:3000"));
-//
-//        // Allow all the HTTP methods we use in the API
-//        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-//
-//        // Allow the frontend to send the Authorization header (for our JWT) and Content-Type (for JSON)
-//        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type"));
-//
-//        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-//        source.registerCorsConfiguration("/**", configuration);
-//        return source;
-//    }
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+
+        // We are allowing standard local development ports (like VS Code Live Server or React)
+        configuration.setAllowedOrigins(List.of("http://127.0.0.1:5500", "http://localhost:5500", "http://localhost:3000"));
+
+        // Allow all the HTTP methods we use in the API
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+
+        // Allow the frontend to send the Authorization header (for our JWT) and Content-Type (for JSON)
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type"));
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
+    }
 }
