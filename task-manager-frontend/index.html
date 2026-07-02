@@ -12,7 +12,20 @@
     <script src="index.js"></script>
 </head>
 <body>
-
+    <div id="notificationBox" 
+    style="
+        display: none; 
+        position: fixed;    
+        top: 20px; 
+        right: 20px; 
+        padding: 15px 20px; 
+        border-radius: 4px; 
+        color: white; 
+        font-weight: bold; 
+        z-index: 1000; 
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3); 
+        transition: opacity 0.3s;" > </div>
+        <!-- for notification box -->
     <div class="container" id="loginBox">
         <h2>Sign In</h2>
         <input type="text" id="loginId" placeholder="Email or Username">

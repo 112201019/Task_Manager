@@ -18,6 +18,7 @@ public class TaskDto {
     private String description;
     private TaskPriority taskPriority;
     private TaskStatusType taskStatus;
+    private boolean isRecurring;
     private LocalDateTime dueDate;
     private UUID userId;
 }

@@ -15,11 +15,11 @@ async function login() {
         const res = await fetch(`${API_BASE}/auth/login`, {
             method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
         });
-        if (!res.ok) return alert("Login failed! Check credentials.");
+        if (!res.ok) return showMessage("Login failed! Check credentials.");
         const data = await res.json();
         localStorage.setItem('jwt_token', data.token);
         window.location.href = 'tasks.html';
-    } catch (e) { alert("Server error!"); }
+    } catch (e) { showMessage("Server error!"); }
 }
 
 async function register() {
@@ -33,11 +33,26 @@ async function register() {
             method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
         });
         if (res.ok) {
-            alert("Registration successful! Please login.");
+            showMessage("Registration successful! Please login.");
             toggleView('loginBox');
         } else {
             const err = await res.json();
-            alert("Error: " + err.message);
+            showMessage("Error: " + err.message);
         }
-    } catch (e) { alert("Server error!"); }
+    } catch (e) { showMessage("Server error!"); }
+}
+
+// --- TOAST MESSENGER ---
+function showMessage(message, type = 'success') {
+    const toast = document.getElementById('notificationBox');
+    toast.innerText = message;
+    
+    // Green for success, Red for errors
+    toast.style.backgroundColor = type === 'error' ? '#ff4d4d' : '#4CAF50'; 
+    toast.style.display = 'block';
+    
+    // Hide after 3 seconds
+    setTimeout(() => { 
+        toast.style.display = 'none'; 
+    }, 3000);
 }
