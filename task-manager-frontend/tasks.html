@@ -12,10 +12,23 @@
         .inline-btn { width: auto; padding: 5px 10px; margin: 0; }
         hr { border-top: 1px dotted black; }
     </style>
-    <script src="tasks.js"></script>
 </head>
 <body>
-
+    <div id="notificationBox" 
+    style="
+        display: none; 
+        position: fixed;    
+        top: 20px; 
+        right: 20px; 
+        padding: 15px 20px; 
+        border-radius: 4px; 
+        color: white; 
+        font-weight: bold; 
+        z-index: 1000; 
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3); 
+        transition: opacity 0.3s;" > </div>
+        <!-- for notification box -->
+         
     <div class="header-bar">
         <h2>Welcome, <span id="displayUsername" style="color: #444;">User</span>!</h2>
         <div>
@@ -24,6 +37,7 @@
         </div>
     </div>
 
+    <!-- PROFILE SETTINGS -->
     <div class="section">
         <h3>Profile Settings</h3>
         <details>
@@ -43,25 +57,41 @@
         </details>
     </div>
 
+    <!-- TASK FORM -->
     <div class="section">
         <h3 id="formTitle">Add New Task</h3>
-        <input type="text" id="title" placeholder="Title">
-        <textarea id="desc" placeholder="Description"></textarea>
-        <select id="priority">
-            <option value="EMERGENCY">Emergency</option>
-            <option value="HIGH">High</option>
-            <option value="NORMAL" selected>Normal</option>
-            <option value="LOW">Low</option>
-        </select>
-        <input type="datetime-local" id="dueDate">
-        <button id="saveBtn" onclick="saveTask()">Save Task</button>
+        <details>
+            <summary id="aboutTask">Add New Task</summary>
+            <hr>
+            <input type="text" id="title" placeholder="Title">
+            <textarea id="desc" placeholder="Description"></textarea>
+            <select id="priority">
+                <option value="EMERGENCY">Emergency</option>
+                <option value="HIGH">High</option>
+                <option value="NORMAL" selected>Normal</option>
+                <option value="LOW">Low</option>
+            </select>
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                <input type="checkbox" id="isRecurring" style="width: auto; margin: 0;" onchange="toggleDateInput()">
+                <label id="recurLabel" for="isRecurring">Make this a Daily Recurring Task</label>
+            </div>
+            
+            <!-- Toggle inputs cleanly -->
+            <input type="datetime-local" id="dueDate">
+            <input type="time" id="dueTime" style="display: none;">
+            
+            <button id="saveBtn" onclick="saveTask()">Save Task</button>
+            <button id="cancelBtn" onclick="cancelEdit()" style="display: none; background-color: #444; color: white;">Cancel Edit</button>
+            <hr>
+        </details>
     </div>
 
+    <!-- TASK LIST -->
     <div class="section">
         <h3>My Tasks</h3>
         <div id="taskList"></div>
     </div>
 
-
+    <script src="tasks.js"></script>
 </body>
 </html>

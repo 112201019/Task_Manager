@@ -33,27 +33,23 @@ public class TasksService implements TasksServiceInterface{
         Users user = UsersRepository.findById(request.getUserId())
                 .orElseThrow(() -> new EntityNotFoundException("User not found with ID: " + userId));
 
+        LocalDateTime finalDueDate = request.getDueDate();
+        if (request.isRecurring() && finalDueDate == null) {
+            finalDueDate = LocalDateTime.now().withHour(23).withMinute(59).withSecond(59);
+        }
+
         Tasks newTask = Tasks.builder()
                 .title(request.getTitle())
                 .description(request.getDescription())
                 .taskPriority(request.getTaskPriority())
                 .taskStatus(request.getTaskStatus())
-                .dueDate(request.getDueDate())
+                .isRecurring(request.isRecurring())
+                .dueDate(finalDueDate)
                 .build();
 
         newTask.setUser(user);
         user.getTasks().add(newTask);
-
-        newTask= tasksRepository.save(newTask);
-        new TaskDto(
-                newTask.getTaskId(),
-                newTask.getTitle(),
-                newTask.getDescription(),
-                newTask.getTaskPriority(),
-                newTask.getTaskStatus(),
-                newTask.getDueDate(),
-                newTask.getUser().getUserId()
-        );
+        tasksRepository.save(newTask);
     }
 
     @Override
@@ -80,6 +76,7 @@ public class TasksService implements TasksServiceInterface{
                         k.getDescription(),
                         k.getTaskPriority(),
                         k.getTaskStatus(),
+                        k.isRecurring(),
                         k.getDueDate(),
                         k.getUser().getUserId())
                 ).toList();
@@ -106,6 +103,27 @@ public class TasksService implements TasksServiceInterface{
                 task.setTaskStatus(requestDto.getTaskStatus());
             }
         }
+        boolean isMarkedDone = (requestDto.getTaskStatus() == TaskStatusType.DONE);
+        task.setTaskStatus(requestDto.getTaskStatus());
+
+        // THE DAILY CLONER
+        if (isMarkedDone && task.isRecurring()) {
+            // Push the date exactly 1 day forward
+            LocalDateTime nextDueDate = task.getDueDate() != null
+                    ? task.getDueDate().plusDays(1)
+                    : LocalDateTime.now().plusDays(1).withHour(23).withMinute(59);
+
+            Tasks clonedTask = Tasks.builder()
+                    .title(task.getTitle())
+                    .description(task.getDescription())
+                    .taskPriority(task.getTaskPriority())
+                    .taskStatus(TaskStatusType.TO_DO)
+                    .isRecurring(true)
+                    .dueDate(nextDueDate)
+                    .user(task.getUser())
+                    .build();
+            tasksRepository.save(clonedTask);
+        }
         if(requestDto.getDueDate() != task.getDueDate()){
             task.setDueDate(requestDto.getDueDate());
         }
@@ -116,6 +134,7 @@ public class TasksService implements TasksServiceInterface{
                 task.getDescription(),
                 task.getTaskPriority(),
                 task.getTaskStatus(),
+                task.isRecurring(),
                 task.getDueDate(),
                 task.getUser().getUserId()
         );
@@ -141,7 +160,7 @@ public class TasksService implements TasksServiceInterface{
                 .description(existingTask.getDescription())
                 .taskPriority(existingTask.getTaskPriority())
                 .taskStatus(existingTask.getTaskStatus())
-                .taskId(existingTask.getTaskId())
+                .isRecurring(existingTask.isRecurring())
                 .dueDate(existingTask.getDueDate())
                 .userId(existingTask.getUser().getUserId())
                 .build();
@@ -156,6 +175,7 @@ public class TasksService implements TasksServiceInterface{
                         task.getDescription(),
                         task.getTaskPriority(),
                         task.getTaskStatus(),
+                        task.isRecurring(),
                         task.getDueDate(),
                         task.getUser().getUserId())
                 ).toList();

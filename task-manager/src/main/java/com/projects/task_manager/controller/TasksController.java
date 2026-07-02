@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
-
+import jakarta.validation.Valid;
 @RestController
 @RequestMapping("api/tasks")
 @RequiredArgsConstructor
@@ -25,7 +25,7 @@ public class TasksController {
 
 
     @PostMapping("/save")
-    public ResponseEntity<Void> createTask(@RequestBody TaskRequestDto request, @AuthenticationPrincipal Users currentUser){
+    public ResponseEntity<Void> createTask(@Valid @RequestBody TaskRequestDto request, @AuthenticationPrincipal Users currentUser){
         //CRUD operations Create- Read- Update Delete
         request.setUserId(currentUser.getUserId());
         request.setTaskStatus(TaskStatusType.TO_DO);
@@ -41,7 +41,7 @@ public class TasksController {
     }
 
     @PutMapping("/edit/{task_id}")
-    public ResponseEntity<Void> updateTask(@PathVariable UUID task_id, @RequestBody TaskRequestDto request){
+    public ResponseEntity<Void> updateTask(@PathVariable UUID task_id, @Valid @RequestBody TaskRequestDto request){
         TaskDto t = tasksService.fetchTask(task_id);
         request.setTaskStatus(t.getTaskStatus());
         request.setUserId(t.getUserId());
@@ -63,6 +63,7 @@ public class TasksController {
         taskRequest.setDescription(existingTask.getDescription());
         taskRequest.setTaskPriority(existingTask.getTaskPriority());
         taskRequest.setTaskStatus(taskStatus.getTaskStatus());
+        taskRequest.setRecurring(existingTask.isRecurring());
         taskRequest.setDueDate(existingTask.getDueDate());
         taskRequest.setUserId(existingTask.getUserId());
         tasksService.updateTask(task_id, taskRequest);

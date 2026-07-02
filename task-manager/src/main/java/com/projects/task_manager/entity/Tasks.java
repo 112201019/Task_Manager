@@ -33,6 +33,9 @@ public class Tasks {
     @Column(nullable = false)
     private TaskStatusType taskStatus;
 
+    @Column(nullable = false, name = "is_recurring")
+    private boolean isRecurring;
+
     private LocalDateTime dueDate;
 
     @ManyToOne
