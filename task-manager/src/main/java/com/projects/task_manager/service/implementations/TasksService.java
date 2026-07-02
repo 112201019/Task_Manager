@@ -99,7 +99,7 @@ public class TasksService implements TasksServiceInterface{
             task.setTaskPriority(requestDto.getTaskPriority());
         }
         if(requestDto.getTaskStatus() != task.getTaskStatus()){
-            if(LocalDateTime.now().isBefore(requestDto.getDueDate()) && requestDto.getTaskStatus()==TaskStatusType.OVERDUE){
+            if(requestDto.getDueDate() != null && LocalDateTime.now().isBefore(requestDto.getDueDate()) && requestDto.getTaskStatus()==TaskStatusType.OVERDUE){
                 //pass
             }
             else{

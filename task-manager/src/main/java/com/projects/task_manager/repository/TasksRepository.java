@@ -10,7 +10,7 @@ import java.util.UUID;
 
 public interface TasksRepository extends JpaRepository<Tasks, UUID> {
 
-    @Query(value = "SELECT * FROM tasks", nativeQuery = true)
+    @Query(value = "SELECT * FROM tasks WHERE task_status != 'DELETED'", nativeQuery = true)
     List<Tasks> getAllTasks();
 
 //    @Query(value = "SELECT * FROM users WHERE role = :user_role", nativeQuery = true)

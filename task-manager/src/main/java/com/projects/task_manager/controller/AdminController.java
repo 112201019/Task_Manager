@@ -1,7 +1,9 @@
 package com.projects.task_manager.controller;
 
 
+import com.projects.task_manager.dto.EditUserDto;
 import com.projects.task_manager.dto.TaskDto;
+import com.projects.task_manager.dto.TaskRequestDto;
 import com.projects.task_manager.dto.UserDto;
 import com.projects.task_manager.service.TasksServiceInterface;
 import com.projects.task_manager.service.UserServiceInterface;
@@ -48,7 +50,11 @@ public class AdminController {
         tasksService.deleteTask(taskId);
         return ResponseEntity.noContent().build();
     }
-    //
 
-
+    @PatchMapping("/edit-user/{userId}")
+    public ResponseEntity<Void> editUserAsAdmin(@PathVariable UUID userId, @RequestBody EditUserDto editRequest) {
+        editRequest.setUserId(userId);
+        usersService.editUser(editRequest);
+        return ResponseEntity.ok().build();
+    }
 }

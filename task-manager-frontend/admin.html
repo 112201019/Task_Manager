@@ -11,6 +11,7 @@
         th, td { border: 1px solid black; padding: 8px; text-align: left; }
         button { padding: 5px 10px; cursor: pointer; }
     </style>
+    <script src="admin.js"></script>
 </head>
 <body>
 
@@ -25,7 +26,17 @@
     </div>
 
     <div id="adminContent" style="display:none; width: 100%; display: flex; flex-direction: column; align-items: center;">
+        <div id="adminContent" style="display:none; width: 100%; display: flex; flex-direction: column; align-items: center;">
         
+        <!-- ADMIN EDIT USER FORM -->
+        <div id="adminEditUserBox" class="section" style="display:none; background-color: #f9f9f9;">
+            <h3>Edit User</h3>
+            <input type="text" id="adminEditUsername" placeholder="Username">
+            <input type="email" id="adminEditEmail" placeholder="Email">
+            <button class="inline-btn" onclick="saveAdminUser()">Save User Updates</button>
+            <button class="inline-btn" onclick="cancelAdminEdit('adminEditUserBox')">Cancel</button>
+        </div>
+
         <div class="section">
             <h3>All System Users</h3>
             <table>
@@ -43,65 +54,5 @@
         </div>
 
     </div>
-
-    <script>
-        const API = 'http://localhost:8080/api';
-        const token = localStorage.getItem('jwt_token');
-        if (!token) window.location.href = 'index.html';
-        const headers = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token };
-
-        async function loadDashboard() {
-            const res = await fetch(`${API}/admin/dashboard`, { headers });
-            
-            if (res.status === 403) {
-                document.getElementById('adminContent').style.display = 'none';
-                document.getElementById('errorMsg').style.display = 'block';
-                return;
-            }
-            
-            document.getElementById('adminContent').style.display = 'flex';
-            const data = await res.json();
-
-            // Load Users
-            const uTable = document.getElementById('usersTable');
-            uTable.innerHTML = '';
-            data.users.forEach(u => {
-                uTable.innerHTML += `<tr>
-                    <td><small>${u.userId}</small></td>
-                    <td>${u.username}</td>
-                    <td>${u.email}</td>
-                    <td><button onclick="adminDeleteUser('${u.userId}')">Delete User</button></td>
-                </tr>`;
-            });
-
-            // Load Tasks
-            const tTable = document.getElementById('tasksTable');
-            tTable.innerHTML = '';
-            data.tasks.forEach(t => {
-                tTable.innerHTML += `<tr>
-                    <td><small>${t.taskId}</small></td>
-                    <td>${t.title}</td>
-                    <td><small>${t.userId}</small></td>
-                    <td><button onclick="adminDeleteTask('${t.taskId}')">Delete Task</button></td>
-                </tr>`;
-            });
-        }
-
-        async function adminDeleteUser(userId) {
-            if (confirm("Delete this user AND all their tasks system-wide?")) {
-                await fetch(`${API}/admin/delete-user/${userId}`, { method: 'DELETE', headers });
-                loadDashboard();
-            }
-        }
-
-        async function adminDeleteTask(taskId) {
-            if (confirm("Delete this task?")) {
-                await fetch(`${API}/admin/delete-task/${taskId}`, { method: 'DELETE', headers });
-                loadDashboard();
-            }
-        }
-
-        loadDashboard();
-    </script>
 </body>
 </html>
