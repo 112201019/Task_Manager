@@ -5,13 +5,14 @@ import com.projects.task_manager.dto.ChangePasswordDto;
 import com.projects.task_manager.dto.EditUserDto;
 import com.projects.task_manager.dto.UserDto;
 import com.projects.task_manager.entity.Users;
+import com.projects.task_manager.entity.type.Role;
 import com.projects.task_manager.repository.TasksRepository;
 import com.projects.task_manager.repository.UsersRepository;
 import com.projects.task_manager.service.UserServiceInterface;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.crypto.password4j.BcryptPassword4jPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -25,6 +26,9 @@ public class UsersService implements UserServiceInterface {
     private final UsersRepository UsersRepository;
     private final TasksRepository TasksRepository;
     private final PasswordEncoder passwordEncoder;
+
+    @Value("${admin.registration.code}")
+    private String secretAdminCode;
 
     public UserDto fetchUser(UUID id) {
         Users user = UsersRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("User not found with email: " + id));
@@ -40,12 +44,22 @@ public class UsersService implements UserServiceInterface {
         if (UsersRepository.existsByEmail(addUserRequestDto.getEmail())) {
             throw new IllegalArgumentException("An account with that email already exists!");
         }
-        Users newUser=Users.builder()
+
+        // 3. Determine the role based on the adminCode provided in the request
+        Role assignedRole = Role.USER;
+        if (addUserRequestDto.getAdminCode() != null &&
+                addUserRequestDto.getAdminCode().equals(secretAdminCode)) {
+            assignedRole = Role.ADMIN;
+        }
+
+        // 4. Update the builder to use the dynamically assigned Enum
+        Users newUser = Users.builder()
                 .username(addUserRequestDto.getUsername())
                 .email(addUserRequestDto.getEmail())
                 .password(passwordEncoder.encode(addUserRequestDto.getPassword()))
-                .role("USER")
+                .role(assignedRole)
                 .build();
+
         Users nUser = UsersRepository.save(newUser);
         return new UserDto(nUser.getUserId(), nUser.getDisplayName(), nUser.getEmail());
     }

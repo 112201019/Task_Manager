@@ -1,5 +1,6 @@
 package com.projects.task_manager.entity;
 
+import com.projects.task_manager.entity.type.Role;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import lombok.*;
@@ -35,7 +36,8 @@ public class Users implements UserDetails {
     private String password;
 
     @Column(nullable = false)
-    private String role;
+    @Enumerated(EnumType.STRING)
+    private Role role;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     //to let the automated deletion of tasks if user is deleted

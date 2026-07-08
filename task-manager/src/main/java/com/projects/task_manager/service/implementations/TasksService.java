@@ -106,9 +106,8 @@ public class TasksService implements TasksServiceInterface{
         boolean isMarkedDone = (requestDto.getTaskStatus() == TaskStatusType.DONE);
         task.setTaskStatus(requestDto.getTaskStatus());
 
-        // THE DAILY CLONER
         if (isMarkedDone && task.isRecurring()) {
-            // Push the date exactly 1 day forward
+            // Push the date 1 day front
             LocalDateTime nextDueDate = task.getDueDate() != null
                     ? task.getDueDate().plusDays(1)
                     : LocalDateTime.now().plusDays(1).withHour(23).withMinute(59);

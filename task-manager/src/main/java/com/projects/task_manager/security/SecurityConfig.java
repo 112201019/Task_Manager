@@ -46,15 +46,10 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // We are allowing standard local development ports (like VS Code Live Server or React)
-        configuration.setAllowedOrigins(List.of("http://127.0.0.1:5500", "http://localhost:5500", "http://localhost:3000"));
-
-        // Allow all the HTTP methods we use in the API
+        // allowing VS Code Live Server port 5500
+        configuration.setAllowedOrigins(List.of("http://127.0.0.1:5500", "http://localhost:5500"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-
-        // Allow the frontend to send the Authorization header (for our JWT) and Content-Type (for JSON)
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type"));
-
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;

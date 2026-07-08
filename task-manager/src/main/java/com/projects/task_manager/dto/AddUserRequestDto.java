@@ -19,4 +19,6 @@ public class AddUserRequestDto {
     @NotBlank(message = "Create a password")
     private String password;
 
+    private String adminCode;
+
 }

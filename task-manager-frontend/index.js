@@ -26,11 +26,15 @@ async function register() {
     const payload = {
         username: document.getElementById('regUsername').value,
         email: document.getElementById('regEmail').value,
-        password: document.getElementById('regPass').value
+        password: document.getElementById('regPass').value,
+        // NEW: Grab the admin code value
+        adminCode: document.getElementById('regAdminCode').value || null 
     };
     try {
         const res = await fetch(`${API_BASE}/users/register`, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/json' }, 
+            body: JSON.stringify(payload)
         });
         if (res.ok) {
             showMessage("Registration successful! Please login.");

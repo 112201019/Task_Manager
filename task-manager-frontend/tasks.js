@@ -67,22 +67,38 @@ async function loadTasks() {
         let statusDropdownHtml = '';
         if (t.taskStatus === 'OVERDUE') {
             statusDropdownHtml = `
-                <option value="OVERDUE" disabled selected>Overdue (Action Required)</option>
-                <option value="DONE">Done</option>
+            <option value="OVERDUE" disabled selected>Overdue (Action Required)</option>
+            <option value="DONE">Done</option>
             `;
         } else {
-            statusDropdownHtml = `
+            if(t.recurring && t.taskStatus === 'DONE'){
+                statusDropdownHtml = `
+                <option value="DONE" selected>Done</option>
+                <option value="IN_PROGRESS" disabled>In Progress (Locked)</option>
+                <option value="TO_DO" disabled>To Do (Locked)</option>
+                `;       
+            }
+            else if (t.recurring && t.taskStatus === 'OVERDUE') {
+                statusDropdownHtml = `
+                <option value="OVERDUE" disabled selected>Overdue (Action Required)</option>
+                <option value="DONE">Done</option>
+                `;
+            }
+            else{
+                statusDropdownHtml = `
                 <option value="TO_DO" ${t.taskStatus === 'TO_DO' ? 'selected' : ''}>To Do</option>
                 <option value="IN_PROGRESS" ${t.taskStatus === 'IN_PROGRESS' ? 'selected' : ''}>In Progress</option>
                 <option value="DONE" ${t.taskStatus === 'DONE' ? 'selected' : ''}>Done</option>
-            `;
+                `;
+            }
+            
         }
-
+        var repeatText = t.recurring ? `<br><small><b>Daily Recurring Task</b></small>` : '';
+        
         const formattedDate = t.dueDate 
             ? new Date(t.dueDate).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) 
             : 'No Date Set';
 
-        var repeatText = t.recurring ? `<br><small><b>Daily Recurring Task</b></small>` : '';
 
         let editButtonHtml = '';
         if (t.recurring && t.taskStatus === 'DONE') {
@@ -123,7 +139,7 @@ function setupEdit(id, title, desc, priority, isRecurring, dueDate) {
     // LOCK THE CHECKBOX
     const recurCb = document.getElementById('isRecurring');
     recurCb.checked = (isRecurring === true);
-    recurCb.disabled = true; // Greys it out!
+    recurCb.disabled = true;
     document.getElementById('recurLabel').innerText = isRecurring ? "Daily Recurring Task (Uneditable)" : "Standard Task (Uneditable)";
     
     // Show Cancel button & change Save text
