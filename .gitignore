@@ -15,8 +15,6 @@ target/
 .project
 .DS_Store
 
-### Secrets and Configs ###
-task-manager/src/main/resources/application.properties
 
 ####logs
 *.log
