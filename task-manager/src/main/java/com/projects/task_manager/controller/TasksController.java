@@ -41,33 +41,48 @@ public class TasksController {
     }
 
     @PutMapping("/edit/{task_id}")
-    public ResponseEntity<Void> updateTask(@PathVariable UUID task_id, @Valid @RequestBody TaskRequestDto request){
-        TaskDto t = tasksService.fetchTask(task_id);
-        request.setTaskStatus(t.getTaskStatus());
-        request.setUserId(t.getUserId());
-        tasksService.updateTask(task_id, request);
-        return ResponseEntity.ok().build();
+    public ResponseEntity<Void> updateTask(@AuthenticationPrincipal Users currentUser, @PathVariable UUID task_id, @Valid @RequestBody TaskRequestDto request){
+        if(currentUser.getUserId() == tasksService.fetchTask(task_id).getUserId()){
+            TaskDto t = tasksService.fetchTask(task_id);
+            request.setTaskStatus(t.getTaskStatus());
+            request.setUserId(t.getUserId());
+            tasksService.updateTask(task_id, request);
+            return ResponseEntity.ok().build();
+        }
+        else{
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
     }
 
     @DeleteMapping("/delete/{task_id}")
-    public ResponseEntity<Void> deleteStudent(@PathVariable UUID task_id){
-        tasksService.deleteTask(task_id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<Void> deleteStudent(@AuthenticationPrincipal Users currentUser, @PathVariable UUID task_id){
+        if(currentUser.getUserId() == tasksService.fetchTask(task_id).getUserId()){
+            tasksService.deleteTask(task_id);
+            return ResponseEntity.noContent().build();
+        }
+        else{
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
     }
 
     @PatchMapping("/update-status/{task_id}")
-    public ResponseEntity<Void> updateStatus(@RequestBody TaskStatusUpdateDto taskStatus, @PathVariable UUID task_id){
-        TaskDto existingTask = tasksService.fetchTask(task_id);
-        TaskRequestDto taskRequest = new TaskRequestDto();
-        taskRequest.setTitle(existingTask.getTitle());
-        taskRequest.setDescription(existingTask.getDescription());
-        taskRequest.setTaskPriority(existingTask.getTaskPriority());
-        taskRequest.setTaskStatus(taskStatus.getTaskStatus());
-        taskRequest.setRecurring(existingTask.isRecurring());
-        taskRequest.setDueDate(existingTask.getDueDate());
-        taskRequest.setUserId(existingTask.getUserId());
-        tasksService.updateTask(task_id, taskRequest);
-        return ResponseEntity.ok().build();
+    public ResponseEntity<Void> updateStatus(@AuthenticationPrincipal Users currentUser, @RequestBody TaskStatusUpdateDto taskStatus, @PathVariable UUID task_id){
+        if(currentUser.getUserId() == tasksService.fetchTask(task_id).getUserId()){
+            TaskDto existingTask = tasksService.fetchTask(task_id);
+            TaskRequestDto taskRequest = new TaskRequestDto();
+            taskRequest.setTitle(existingTask.getTitle());
+            taskRequest.setDescription(existingTask.getDescription());
+            taskRequest.setTaskPriority(existingTask.getTaskPriority());
+            taskRequest.setTaskStatus(taskStatus.getTaskStatus());
+            taskRequest.setRecurring(existingTask.isRecurring());
+            taskRequest.setDueDate(existingTask.getDueDate());
+            taskRequest.setUserId(existingTask.getUserId());
+            tasksService.updateTask(task_id, taskRequest);
+            return ResponseEntity.ok().build();
+        }
+        else{
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
     }
 
 

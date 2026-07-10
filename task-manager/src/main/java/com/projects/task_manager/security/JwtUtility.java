@@ -6,6 +6,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
@@ -14,14 +15,15 @@ import java.util.Date;
 import java.util.function.Function;
 
 @Component
-@RequiredArgsConstructor
 public class JwtUtility {
 
     private final UsersService usersService;
+    private final SecretKey key;
+    public JwtUtility(UsersService usersService, @Value("${jwt.secretKey}") String secretKey){
+         this.key = Keys.hmacShaKeyFor(secretKey.getBytes());
+         this.usersService = usersService;
 
-    private final String SECRETKEY= "***REMOVED_JWT***"; //should put in application.properties since it is a secret key
-
-    private final SecretKey key = Keys.hmacShaKeyFor(SECRETKEY.getBytes());
+    }
 
     public String generateToken(UserDetails userDetails) {
         Users user = (Users) userDetails;

@@ -1,0 +1,23 @@
+### Java/Maven ###
+target/
+*.class
+*.jar
+*.war
+*.ear
+*.log
+
+### IDE Configurations ###
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.project
+.DS_Store
+
+### Secrets and Configs ###
+task-manager/src/main/resources/application.properties
+
+####logs
+*.log
+*.gz

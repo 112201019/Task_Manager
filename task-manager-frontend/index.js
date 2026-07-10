@@ -26,9 +26,7 @@ async function register() {
     const payload = {
         username: document.getElementById('regUsername').value,
         email: document.getElementById('regEmail').value,
-        password: document.getElementById('regPass').value,
-        // NEW: Grab the admin code value
-        adminCode: document.getElementById('regAdminCode').value || null 
+        password: document.getElementById('regPass').value
     };
     try {
         const res = await fetch(`${API_BASE}/users/register`, {

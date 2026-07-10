@@ -27,8 +27,6 @@ public class UsersService implements UserServiceInterface {
     private final TasksRepository TasksRepository;
     private final PasswordEncoder passwordEncoder;
 
-    @Value("${admin.registration.code}")
-    private String secretAdminCode;
 
     public UserDto fetchUser(UUID id) {
         Users user = UsersRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("User not found with email: " + id));
@@ -37,27 +35,17 @@ public class UsersService implements UserServiceInterface {
 
     @Override
     public UserDto createUser(AddUserRequestDto addUserRequestDto) {
-        // 1. CHECK FOR DUPLICATES FIRST!
         if (UsersRepository.existsByUsername(addUserRequestDto.getUsername())) {
             throw new IllegalArgumentException("That username is already taken!");
         }
         if (UsersRepository.existsByEmail(addUserRequestDto.getEmail())) {
             throw new IllegalArgumentException("An account with that email already exists!");
         }
-
-        // 3. Determine the role based on the adminCode provided in the request
-        Role assignedRole = Role.USER;
-        if (addUserRequestDto.getAdminCode() != null &&
-                addUserRequestDto.getAdminCode().equals(secretAdminCode)) {
-            assignedRole = Role.ADMIN;
-        }
-
-        // 4. Update the builder to use the dynamically assigned Enum
         Users newUser = Users.builder()
                 .username(addUserRequestDto.getUsername())
                 .email(addUserRequestDto.getEmail())
                 .password(passwordEncoder.encode(addUserRequestDto.getPassword()))
-                .role(assignedRole)
+                .role(Role.USER)
                 .build();
 
         Users nUser = UsersRepository.save(newUser);
