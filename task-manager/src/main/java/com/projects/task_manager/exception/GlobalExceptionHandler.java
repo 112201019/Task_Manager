@@ -1,44 +1,46 @@
 package com.projects.task_manager.exception;
-
 import com.projects.task_manager.dto.ErrorResponseDto;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-
 import java.time.LocalDateTime;
+import java.util.*;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    // Catch the specific exception you threw in your Service!
     @ExceptionHandler(EntityNotFoundException.class)
     public ResponseEntity<ErrorResponseDto> handleEntityNotFound(
             EntityNotFoundException ex, HttpServletRequest request) {
-        ex.printStackTrace();
+        log.warn("Resource not found: {}", ex.getMessage());
         ErrorResponseDto errorDetails = new ErrorResponseDto(
                 LocalDateTime.now(),
-                HttpStatus.NOT_FOUND.value(),        // 404 Status Code
+                HttpStatus.NOT_FOUND.value(),
                 "Resource Not Found",
-                ex.getMessage(),                     // This will be "User not found with ID: X"
+                ex.getMessage(),
                 request.getRequestURI()
         );
-
         return new ResponseEntity<>(errorDetails, HttpStatus.NOT_FOUND);
     }
 
-    // Catch-all for unexpected database failures or null pointers
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponseDto> handleGlobalException(
             Exception ex, HttpServletRequest request) {
-        ex.printStackTrace();
+        String correlationId = UUID.randomUUID().toString();
+
+        log.error("Unhandled Exception [Correlation ID: {}] at {}", correlationId, request.getRequestURI(), ex);
         ErrorResponseDto errorDetails = new ErrorResponseDto(
                 LocalDateTime.now(),
-                HttpStatus.INTERNAL_SERVER_ERROR.value(), // 500 Status Code
+                HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 "Internal Server Error",
-                ex.getMessage(),
+                "An unexpected error occurred. Please contact support with Error ID: " + correlationId,
                 request.getRequestURI()
         );
         return new ResponseEntity<>(errorDetails, HttpStatus.INTERNAL_SERVER_ERROR);
@@ -47,7 +49,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponseDto> handleIllegalArgument(
             IllegalArgumentException ex, HttpServletRequest request) {
-
+        log.warn("Bad Request: {}", ex.getMessage());
         ErrorResponseDto errorDetails = new ErrorResponseDto(
                 LocalDateTime.now(),
                 HttpStatus.BAD_REQUEST.value(),
@@ -55,7 +57,24 @@ public class GlobalExceptionHandler {
                 ex.getMessage(),
                 request.getRequestURI()
         );
+        return new ResponseEntity<>(errorDetails, HttpStatus.BAD_REQUEST);
+    }
 
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorResponseDto> handleValidationExceptions(MethodArgumentNotValidException ex, HttpServletRequest request) {
+
+        List<String> errors = new ArrayList<>();
+        for (FieldError error : ex.getBindingResult().getFieldErrors()) {
+            errors.add(error.getField() + ": " + error.getDefaultMessage());
+        }
+        String combinedErrors = String.join(", ", errors);
+        ErrorResponseDto errorDetails = new ErrorResponseDto(
+                LocalDateTime.now(),
+                HttpStatus.BAD_REQUEST.value(),
+                "Validation Failed",
+                combinedErrors,
+                request.getRequestURI()
+        );
         return new ResponseEntity<>(errorDetails, HttpStatus.BAD_REQUEST);
     }
 }
