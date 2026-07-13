@@ -60,7 +60,7 @@ public class UsersService implements UserServiceInterface {
         Users user = UsersRepository.findById(ud.getUserId())
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
 
-        UsersRepository.findByEmailOrUsername(ud.getUsername(), ud.getUsername())
+        UsersRepository.findByEmailOrUsername(ud.getUsername())
                 .ifPresent(existingUser -> {
                     if (!existingUser.getUserId().equals(ud.getUserId()) && existingUser.getUsername().equals(ud.getUsername())) {
                         throw new IllegalArgumentException("Username is already in use.");

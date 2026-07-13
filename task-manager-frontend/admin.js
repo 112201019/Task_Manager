@@ -2,7 +2,6 @@ const API = 'http://localhost:8080/api';
 if (!localStorage.getItem('jwt_token')) window.location.href = 'index.html';
 
 let currentEditUserId = null;
-let currentEditTaskId = null;
 
 async function apiFetch(endpoint, options = {}) {
     let token = localStorage.getItem('jwt_token');
@@ -132,19 +131,6 @@ async function adminDeleteUser(userId) {
         await apiFetch(`/admin/delete-user/${userId}`, { method: 'DELETE' });
         loadDashboard();
     }
-}
-
-async function saveAdminTask() {
-    const payload = {
-        title: document.getElementById('adminEditTaskTitle').value,
-        description: document.getElementById('adminEditTaskDesc').value,
-        taskPriority: document.getElementById('adminEditTaskPriority').value,
-        taskStatus: document.getElementById('adminEditTaskStatus').value,
-        dueDate: document.getElementById('adminEditTaskDueDate').value
-    };
-    await apiFetch(`/admin/edit-task/${currentEditTaskId}`, { method: 'PUT', body: JSON.stringify(payload) });
-    cancelAdminEdit('adminEditTaskBox');
-    loadDashboard();
 }
 
 async function adminDeleteTask(taskId) {

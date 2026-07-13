@@ -7,6 +7,7 @@ import com.projects.task_manager.dto.TaskRequestDto;
 import com.projects.task_manager.dto.UserDto;
 import com.projects.task_manager.service.TasksServiceInterface;
 import com.projects.task_manager.service.UserServiceInterface;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -76,7 +77,7 @@ public class AdminController {
     }
 
     @PatchMapping("/edit-user/{userId}")
-    public ResponseEntity<Void> editUserAsAdmin(@PathVariable UUID userId, @RequestBody EditUserDto editRequest) {
+    public ResponseEntity<Void> editUserAsAdmin(@PathVariable UUID userId, @Valid @RequestBody EditUserDto editRequest) {
         log.info("attempting to edit user:{} using /delete-user api in admincontroller", userId);
         editRequest.setUserId(userId);
         usersService.editUser(editRequest);

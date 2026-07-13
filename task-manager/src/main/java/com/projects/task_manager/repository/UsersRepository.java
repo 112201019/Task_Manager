@@ -32,7 +32,7 @@ public interface UsersRepository extends JpaRepository<Users, UUID> {
     Optional<Users> findByEmail(@Param("email") String email);
 
     @Query("SELECT u FROM Users u WHERE u.email = :identifier OR u.username = :identifier")
-    Optional<Users> findByEmailOrUsername(@Param("identifier") String email, @Param("identifier") String username);
+    Optional<Users> findByEmailOrUsername(@Param("identifier") String identifier);
 
     @Query("SELECT CASE WHEN COUNT(u) > 0 THEN true ELSE false END FROM Users u WHERE u.username = :username")
     boolean existsByUsername(@Param("username") String username);

@@ -7,6 +7,7 @@ import com.projects.task_manager.dto.EditUserDto;
 import com.projects.task_manager.dto.UserDto;
 import com.projects.task_manager.entity.Users;
 import com.projects.task_manager.service.UserServiceInterface;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,7 +23,7 @@ public class UserController {
     private final UserServiceInterface usersService;
 
     @PostMapping("/register")
-    public ResponseEntity<UserDto> createUser(@RequestBody AddUserRequestDto requestDto) {
+    public ResponseEntity<UserDto> createUser(@Valid @RequestBody AddUserRequestDto requestDto) {
         UserDto newUser = usersService.createUser(requestDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(newUser);
     }
@@ -34,7 +35,7 @@ public class UserController {
     }
 
     @PatchMapping("/edit")
-    public ResponseEntity<Void>  editUser(@AuthenticationPrincipal Users currentUser, @RequestBody EditUserDto editRequest){
+    public ResponseEntity<Void>  editUser(@AuthenticationPrincipal Users currentUser, @Valid @RequestBody EditUserDto editRequest){
         editRequest.setUserId(currentUser.getUserId());
         usersService.editUser(editRequest);
         return ResponseEntity.ok().build();
@@ -48,7 +49,7 @@ public class UserController {
     }
 
     @PatchMapping("/change-password")
-    public ResponseEntity<Void> changePassword(@AuthenticationPrincipal Users currentUser, @RequestBody ChangePasswordDto request) {
+    public ResponseEntity<Void> changePassword(@AuthenticationPrincipal Users currentUser, @Valid @RequestBody ChangePasswordDto request) {
         usersService.changePassword(currentUser.getUserId(), request);
         return ResponseEntity.ok().build();
     }
