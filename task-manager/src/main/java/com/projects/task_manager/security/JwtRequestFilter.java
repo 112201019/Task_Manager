@@ -1,6 +1,7 @@
 package com.projects.task_manager.security;
 
 import com.projects.task_manager.service.implementations.CustomuserDetailsService;
+import com.projects.task_manager.service.implementations.TokenDenylistService; // NEW
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -11,7 +12,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
@@ -22,44 +22,44 @@ public class JwtRequestFilter extends OncePerRequestFilter {
 
     private final CustomuserDetailsService userDetailsService;
     private final JwtUtility jwtUtil;
+    private final TokenDenylistService tokenDenylistService; // NEW INJECTION
 
     @Override
-    //for writing a custom filter we have to often implement a doFilterInternal and add an authentication object in the security context
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
 
-        final String authorizationHeader = request.getHeader("Authorization"); //get the authorization header from the request
-
+        final String authorizationHeader = request.getHeader("Authorization");
         String username = null;
         String jwt = null;
 
         if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
-            jwt = authorizationHeader.substring(7); //remove bearer
+            jwt = authorizationHeader.substring(7);
+
+            // NEW: Instantly reject if the token is in the Redis denylist
+            if (tokenDenylistService.isDenied(jwt)) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.getWriter().write("{\"error\": \"Token has been revoked. Please log in again.\"}");
+                response.setContentType("application/json");
+                return; // Stop the filter chain immediately
+            }
+
             try {
                 username = jwtUtil.extractUsername(jwt);
-                System.out.println("User Valid");
             } catch (Exception e) {
-                // Token is expired or tampered with
                 System.out.println("Invalid or expired JWT token");
             }
         }
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-
             UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
-            if (jwtUtil.isTokenValid(jwt, userDetails)) { //check token validity if the userDetails matched
-
-                // creating a trusted authenticatiom object
+            if (jwtUtil.isTokenValid(jwt, userDetails)) {
                 UsernamePasswordAuthenticationToken uPassToken = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                 uPassToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
-                // By adding that created token into this the user is authenticated
                 SecurityContextHolder.getContext().setAuthentication(uPassToken);
             }
         }
 
-        // for continuing the filters process
         chain.doFilter(request, response);
     }
 }

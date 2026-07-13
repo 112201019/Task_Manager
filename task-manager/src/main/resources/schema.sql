@@ -19,3 +19,13 @@ CREATE TABLE IF NOT EXISTS tasks (
     user_id UUID NOT NULL,
     CONSTRAINT fk_tasks_users FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE CASCADE
     );
+
+-- Create Refresh Tokens Table
+CREATE TABLE IF NOT EXISTS refresh_tokens (
+                                              id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    token VARCHAR(255) NOT NULL UNIQUE,
+    expiry_date TIMESTAMP NOT NULL,
+    user_id UUID NOT NULL,
+    CONSTRAINT fk_refresh_tokens_users FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE CASCADE
+    );
+

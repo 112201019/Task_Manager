@@ -31,7 +31,7 @@ public class JwtUtility {
                 .claim("username", user.getDisplayName())
                 .subject(user.getEmail())
                 .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 10))
+                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 1)) //1 minute
                 .signWith(key)
                 .compact();
     }
@@ -60,5 +60,8 @@ public class JwtUtility {
                 .getPayload();
 
         return claimsResolver.apply(claims);
+    }
+    public Date extractExpiration(String token) {
+        return extractClaim(token, Claims::getExpiration);
     }
 }

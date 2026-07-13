@@ -1,12 +1,44 @@
 const API = 'http://localhost:8080/api';
-const token = localStorage.getItem('jwt_token');
-if (!token) window.location.href = 'index.html';
-
-const headers = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token };
+if (!localStorage.getItem('jwt_token')) window.location.href = 'index.html';
 let editTaskId = null;
+
+async function apiFetch(endpoint, options = {}) {
+    let token = localStorage.getItem('jwt_token');
+    
+    options.headers = {
+        ...options.headers,
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token
+    };
+
+    let response = await fetch(`${API}${endpoint}`, options);
+
+    if (response.status === 401 || response.status === 403) {
+        console.log("Access token expired. Attempting silent refresh...");
+        
+        const refreshResponse = await fetch(`${API}/auth/refresh`, {
+            method: 'POST',
+            credentials: 'include' 
+        });
+
+        if (refreshResponse.ok) {
+            const data = await refreshResponse.json();
+            localStorage.setItem('jwt_token', data.token);
+            
+            options.headers['Authorization'] = 'Bearer ' + data.token;
+            response = await fetch(`${API}${endpoint}`, options);
+        } else {
+            console.error("Session completely expired.");
+            localStorage.removeItem('jwt_token');
+            window.location.href = 'index.html';
+        }
+    }
+    return response;
+}
 
 // --- JWT DECODER ---
 try {
+    const token = localStorage.getItem('jwt_token');
     const payload = JSON.parse(atob(token.split('.')[1]));
     document.getElementById('displayUsername').innerText = payload.username;
     document.getElementById('editUsername').value = payload.username;
@@ -18,7 +50,7 @@ try {
 // --- ADMIN CHECK ---
 async function checkAdminAccess() {
     try {
-        const res = await fetch(`${API}/admin/dashboard`, { headers });
+        const res = await apiFetch('/admin/dashboard');
         if (res.ok) {
             document.getElementById('adminBtn').style.display = 'inline-block';
         }
@@ -38,7 +70,7 @@ function toggleDateInput() {
 
 // --- TASKS API ---
 async function loadTasks() {
-    const res = await fetch(`${API}/tasks/getall`, { headers });
+    const res = await apiFetch('/tasks/getall');
     if (!res.ok) return;
     let tasks = await res.json();
     
@@ -109,9 +141,8 @@ async function loadTasks() {
 
         // 5. Assemble the Metadata Bar
         const metaDiv = document.createElement('div');
-
         const pSmall = document.createElement('small');
-        pSmall.innerHTML = `Priority: <b>${t.taskPriority}</b> | `; // System enum, safe to inject
+        pSmall.innerHTML = `Priority: <b>${t.taskPriority}</b> | `; 
         metaDiv.appendChild(pSmall);
 
         const sSmall = document.createElement('small');
@@ -135,12 +166,14 @@ async function loadTasks() {
 
         const hr = document.createElement('hr');
         const controlsDiv = document.createElement('div');
+
         const delBtn = document.createElement('button');
         delBtn.className = 'inline-btn';
         delBtn.textContent = 'Delete';
         delBtn.style.marginLeft = '5px';
         delBtn.addEventListener('click', () => deleteTask(t.taskId));
-        // 6. Create Buttons Safely (Event Listeners prevent quote breakouts)
+
+        // 6. Create Buttons Safely
         if (t.recurring && t.taskStatus === 'DONE') {
             const lockBtn = document.createElement('button');
             lockBtn.className = 'inline-btn';
@@ -161,9 +194,9 @@ async function loadTasks() {
             editBtn.addEventListener('click', () => {
                 setupEdit(t.taskId, t.title, t.description, t.taskPriority, t.recurring, t.dueDate);
             });
+
             controlsDiv.appendChild(editBtn);
             controlsDiv.appendChild(delBtn);
-
         }
 
         // 7. Inject everything into the card, then the list
@@ -267,23 +300,23 @@ async function saveTask() {
         dueDate: dueDateValue
     };
     
-    const url = editTaskId ? `${API}/tasks/edit/${editTaskId}` : `${API}/tasks/save`;
+    const endpoint = editTaskId ? `/tasks/edit/${editTaskId}` : `/tasks/save`;
     const method = editTaskId ? 'PUT' : 'POST';
     
-    await fetch(url, { method, headers, body: JSON.stringify(payload) });
+    await apiFetch(endpoint, { method, body: JSON.stringify(payload) });
     
     cancelEdit();
     loadTasks();
 }
 
 async function updateStatus(id, status) {
-    await fetch(`${API}/tasks/update-status/${id}`, { method: 'PATCH', headers, body: JSON.stringify({ taskStatus: status }) });
-    loadTasks(); 
+    await apiFetch(`/tasks/update-status/${id}`, { method: 'PATCH', body: JSON.stringify({ taskStatus: status }) });
+    loadTasks();
 }
 
 async function deleteTask(id) {
     if (confirm("Delete task?")) {
-        await fetch(`${API}/tasks/delete/${id}`, { method: 'DELETE', headers });
+        await apiFetch(`/tasks/delete/${id}`, { method: 'DELETE' });
         loadTasks();
     }
 }
@@ -291,7 +324,7 @@ async function deleteTask(id) {
 // --- USER API ---
 async function updateProfile() {
     const payload = { username: document.getElementById('editUsername').value, email: document.getElementById('editEmail').value };
-    const res = await fetch(`${API}/users/edit`, { method: 'PATCH', headers, body: JSON.stringify(payload) });
+    const res = await apiFetch(`/users/edit`, { method: 'PATCH', body: JSON.stringify(payload) });
     if (res.ok) {
         showMessage("Profile updated! Please log in again to apply changes.");
         setTimeout(() => logout(), 2000);
@@ -302,7 +335,7 @@ async function updateProfile() {
 
 async function changePassword() {
     const payload = { oldPassword: document.getElementById('oldPass').value, newPassword: document.getElementById('newPass').value };
-    const res = await fetch(`${API}/users/change-password`, { method: 'PATCH', headers, body: JSON.stringify(payload) });
+    const res = await apiFetch(`/users/change-password`, { method: 'PATCH', body: JSON.stringify(payload) });
     if (res.ok) {
         document.getElementById('oldPass').value = '';
         document.getElementById('newPass').value = '';
@@ -314,14 +347,26 @@ async function changePassword() {
 
 async function deleteAccount() {
     if (confirm("WARNING: This will permanently delete your account and all tasks!")) {
-        await fetch(`${API}/users/delete`, { method: 'DELETE', headers });
+        await apiFetch(`/users/delete`, { method: 'DELETE' });
         logout();
     }
 }
 
-function logout() {
-    localStorage.removeItem('jwt_token');
-    window.location.href = 'index.html';
+async function logout() {
+    try {
+        await fetch(`${API}/auth/logout`, { 
+            method: 'POST',
+            headers: {
+                'Authorization': 'Bearer ' + localStorage.getItem('jwt_token')
+            },
+            credentials: 'include' 
+        });
+    } catch (e) {
+        console.error("Logout request failed, cleaning up locally.");
+    } finally {
+        localStorage.removeItem('jwt_token');
+        window.location.href = 'index.html';
+    }
 }
 
 checkAdminAccess();
@@ -333,11 +378,11 @@ function showMessage(message, type = 'success') {
     toast.innerText = message;
     
     // Green for success, Red for errors
-    toast.style.backgroundColor = type === 'error' ? '#ff4d4d' : '#4CAF50'; 
+    toast.style.backgroundColor = type === 'error' ? '#ff4d4d' : '#4CAF50';
     toast.style.display = 'block';
     
     // Hide after 3 seconds
-    setTimeout(() => { 
-        toast.style.display = 'none'; 
+    setTimeout(() => {
+        toast.style.display = 'none';
     }, 3000);
 }

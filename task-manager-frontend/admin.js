@@ -1,13 +1,42 @@
 const API = 'http://localhost:8080/api';
-const token = localStorage.getItem('jwt_token');
-if (!token) window.location.href = 'index.html';
+if (!localStorage.getItem('jwt_token')) window.location.href = 'index.html';
 
-const headers = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token };
 let currentEditUserId = null;
 let currentEditTaskId = null;
 
+async function apiFetch(endpoint, options = {}) {
+    let token = localStorage.getItem('jwt_token');
+    
+    options.headers = {
+        ...options.headers,
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token
+    };
+
+    let response = await fetch(`${API}${endpoint}`, options);
+
+    if (response.status === 401 || response.status === 403) {
+        const refreshResponse = await fetch(`${API}/auth/refresh`, {
+            method: 'POST',
+            credentials: 'include' 
+        });
+
+        if (refreshResponse.ok) {
+            const data = await refreshResponse.json();
+            localStorage.setItem('jwt_token', data.token);
+            
+            options.headers['Authorization'] = 'Bearer ' + data.token;
+            response = await fetch(`${API}${endpoint}`, options);
+        } else {
+            localStorage.removeItem('jwt_token');
+            window.location.href = 'index.html';
+        }
+    }
+    return response;
+}
+
 async function loadDashboard() {
-    const res = await fetch(`${API}/admin/dashboard`, { headers });
+    const res = await apiFetch('/admin/dashboard');
     
     if (res.status === 403) {
         document.getElementById('adminContent').style.display = 'none';
@@ -26,13 +55,10 @@ async function loadDashboard() {
         
         const tdId = document.createElement('td');
         tdId.innerHTML = `<small>${u.userId}</small>`; // UUID is system generated
-
         const tdUser = document.createElement('td');
         tdUser.textContent = u.username; // SAFE TEXT CONTENT
-
         const tdEmail = document.createElement('td');
         tdEmail.textContent = u.email; // SAFE TEXT CONTENT
-
         const tdAction = document.createElement('td');
         
         const editBtn = document.createElement('button');
@@ -53,7 +79,6 @@ async function loadDashboard() {
         tr.appendChild(tdUser);
         tr.appendChild(tdEmail);
         tr.appendChild(tdAction);
-
         uTable.appendChild(tr);
     });
 
@@ -65,13 +90,10 @@ async function loadDashboard() {
 
         const tdId = document.createElement('td');
         tdId.innerHTML = `<small>${t.taskId}</small>`; // UUID
-
         const tdTitle = document.createElement('td');
         tdTitle.textContent = t.title; // SAFE TEXT CONTENT
-
         const tdOwner = document.createElement('td');
         tdOwner.innerHTML = `<small>${t.userId}</small>`; // UUID
-
         const tdAction = document.createElement('td');
         
         const delBtn = document.createElement('button');
@@ -85,7 +107,6 @@ async function loadDashboard() {
         tr.appendChild(tdTitle);
         tr.appendChild(tdOwner);
         tr.appendChild(tdAction);
-
         tTable.appendChild(tr);
     });
 }
@@ -101,14 +122,14 @@ function promptEditUser(id, username, email) {
 
 async function saveAdminUser() {
     const payload = { username: document.getElementById('adminEditUsername').value, email: document.getElementById('adminEditEmail').value };
-    await fetch(`${API}/admin/edit-user/${currentEditUserId}`, { method: 'PATCH', headers, body: JSON.stringify(payload) });
+    await apiFetch(`/admin/edit-user/${currentEditUserId}`, { method: 'PATCH', body: JSON.stringify(payload) });
     cancelAdminEdit('adminEditUserBox');
     loadDashboard();
 }
 
 async function adminDeleteUser(userId) {
     if (confirm("Delete this user AND all their tasks system-wide?")) {
-        await fetch(`${API}/admin/delete-user/${userId}`, { method: 'DELETE', headers });
+        await apiFetch(`/admin/delete-user/${userId}`, { method: 'DELETE' });
         loadDashboard();
     }
 }
@@ -121,14 +142,14 @@ async function saveAdminTask() {
         taskStatus: document.getElementById('adminEditTaskStatus').value,
         dueDate: document.getElementById('adminEditTaskDueDate').value
     };
-    await fetch(`${API}/admin/edit-task/${currentEditTaskId}`, { method: 'PUT', headers, body: JSON.stringify(payload) });
+    await apiFetch(`/admin/edit-task/${currentEditTaskId}`, { method: 'PUT', body: JSON.stringify(payload) });
     cancelAdminEdit('adminEditTaskBox');
     loadDashboard();
 }
 
 async function adminDeleteTask(taskId) {
     if (confirm("Delete this task?")) {
-        await fetch(`${API}/admin/delete-task/${taskId}`, { method: 'DELETE', headers });
+        await apiFetch(`/admin/delete-task/${taskId}`, { method: 'DELETE' });
         loadDashboard();
     }
 }

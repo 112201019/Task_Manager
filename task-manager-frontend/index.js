@@ -11,26 +11,30 @@ async function login() {
         loginIdentifier: document.getElementById('loginId').value,
         password: document.getElementById('loginPass').value
     };
+
     try {
         const res = await fetch(`${API_BASE}/auth/login`, {
             method: 'POST', 
             headers: { 'Content-Type': 'application/json' }, 
-            body: JSON.stringify(payload)
+            body: JSON.stringify(payload),
+            credentials: 'include' // NEW: CRITICAL FOR RECEIVING THE REFRESH COOKIE
         });
+
         if (!res.ok) {
             if (res.status === 429) {
                 const errData = await res.json();
-                return showMessage(errData.error, 'error'); 
-            }
-            else{
+                return showMessage(errData.error, 'error');
+            } else {
                 return showMessage("Login failed! Check credentials.", 'error');
             }
         }
+
         const data = await res.json();
         localStorage.setItem('jwt_token', data.token);
         window.location.href = 'tasks.html';
-    } catch (e) { 
-        showMessage("Server error!", 'error'); 
+
+    } catch (e) {
+        showMessage("Server error!", 'error');
     }
 }
 
@@ -40,12 +44,14 @@ async function register() {
         email: document.getElementById('regEmail').value,
         password: document.getElementById('regPass').value
     };
+
     try {
         const res = await fetch(`${API_BASE}/users/register`, {
             method: 'POST', 
             headers: { 'Content-Type': 'application/json' }, 
             body: JSON.stringify(payload)
         });
+
         if (res.ok) {
             showMessage("Registration successful! Please login.");
             toggleView('loginBox');
@@ -53,7 +59,9 @@ async function register() {
             const err = await res.json();
             showMessage("Error: " + err.message);
         }
-    } catch (e) { showMessage("Server error!"); }
+    } catch (e) { 
+        showMessage("Server error!"); 
+    }
 }
 
 // --- TOAST MESSENGER ---
@@ -62,11 +70,11 @@ function showMessage(message, type = 'success') {
     toast.innerText = message;
     
     // Green for success, Red for errors
-    toast.style.backgroundColor = type === 'error' ? '#ff4d4d' : '#4CAF50'; 
+    toast.style.backgroundColor = type === 'error' ? '#ff4d4d' : '#4CAF50';
     toast.style.display = 'block';
     
     // Hide after 3 seconds
-    setTimeout(() => { 
-        toast.style.display = 'none'; 
+    setTimeout(() => {
+        toast.style.display = 'none';
     }, 3000);
 }
