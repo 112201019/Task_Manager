@@ -2,13 +2,14 @@ package com.projects.task_manager.service;
 
 import com.projects.task_manager.dto.TaskRequestDto;
 import com.projects.task_manager.dto.TaskDto;
+import org.springframework.data.domain.Page;
 
 import java.util.List;
 import java.util.UUID;
 
 public interface TasksServiceInterface {
 
-    void createNewTask(TaskRequestDto request); //task creation
+    void createNewTask(TaskRequestDto request, UUID userId); //task creation
 
     List<TaskDto> getAllTasks(UUID userId); //get all non deleted tasks
 
@@ -18,5 +19,5 @@ public interface TasksServiceInterface {
 
     TaskDto fetchTask(UUID id);
 
-    List<TaskDto> getAllTasksAdmin();
+    Page<TaskDto> getAllTasksAdmin(int page, int size);
 }

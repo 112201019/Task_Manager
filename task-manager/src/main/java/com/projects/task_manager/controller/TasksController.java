@@ -27,9 +27,8 @@ public class TasksController {
     @PostMapping("/save")
     public ResponseEntity<Void> createTask(@Valid @RequestBody TaskRequestDto request, @AuthenticationPrincipal Users currentUser){
         //CRUD operations Create- Read- Update Delete
-        request.setUserId(currentUser.getUserId());
         request.setTaskStatus(TaskStatusType.TO_DO);
-        tasksService.createNewTask(request);
+        tasksService.createNewTask(request, currentUser.getUserId());
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
@@ -45,7 +44,6 @@ public class TasksController {
         if(currentUser.getUserId().equals(tasksService.fetchTask(task_id).getUserId())){
             TaskDto t = tasksService.fetchTask(task_id);
             request.setTaskStatus(t.getTaskStatus());
-            request.setUserId(t.getUserId());
             tasksService.updateTask(task_id, request);
             return ResponseEntity.ok().build();
         }
@@ -76,7 +74,6 @@ public class TasksController {
             taskRequest.setTaskStatus(taskStatus.getTaskStatus());
             taskRequest.setRecurring(existingTask.isRecurring());
             taskRequest.setDueDate(existingTask.getDueDate());
-            taskRequest.setUserId(existingTask.getUserId());
             tasksService.updateTask(task_id, taskRequest);
             return ResponseEntity.ok().build();
         }

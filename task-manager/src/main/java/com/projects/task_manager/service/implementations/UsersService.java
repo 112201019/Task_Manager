@@ -12,6 +12,9 @@ import com.projects.task_manager.service.UserServiceInterface;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -54,7 +57,23 @@ public class UsersService implements UserServiceInterface {
 
     @Override
     public void editUser(EditUserDto ud){
-        Users user = UsersRepository.findById(ud.getUserId()).orElseThrow();
+        Users user = UsersRepository.findById(ud.getUserId())
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+
+        UsersRepository.findByEmailOrUsername(ud.getUsername(), ud.getUsername())
+                .ifPresent(existingUser -> {
+                    if (!existingUser.getUserId().equals(ud.getUserId()) && existingUser.getUsername().equals(ud.getUsername())) {
+                        throw new IllegalArgumentException("Username is already in use.");
+                    }
+                });
+
+        UsersRepository.findByEmail(ud.getEmail())
+                .ifPresent(existingUser -> {
+                    if (!existingUser.getUserId().equals(ud.getUserId())) {
+                        throw new IllegalArgumentException("Email is already in use.");
+                    }
+                });
+
         user.setEmail(ud.getEmail());
         user.setUsername(ud.getUsername());
         UsersRepository.save(user);
@@ -68,13 +87,14 @@ public class UsersService implements UserServiceInterface {
         UsersRepository.deleteById(id);
     }
     @Override
-    public List<UserDto> getAllUsers() {
-        return UsersRepository.findAll().stream().map(
-                        user -> new UserDto(
-                                user.getUserId(),
-                                user.getDisplayName(),
-                                user.getEmail()))
-                .toList();
+    public Page<UserDto> getAllUsers(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return UsersRepository.findAll(pageable)
+                .map(user -> new UserDto(
+                        user.getUserId(),
+                        user.getDisplayName(),
+                        user.getEmail()
+                ));
     }
 
     @Override

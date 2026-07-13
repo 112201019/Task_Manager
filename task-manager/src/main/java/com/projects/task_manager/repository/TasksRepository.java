@@ -2,6 +2,8 @@ package com.projects.task_manager.repository;
 
 import com.projects.task_manager.entity.Tasks;
 import com.projects.task_manager.entity.Users;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -24,5 +26,5 @@ public interface TasksRepository extends JpaRepository<Tasks, UUID> {
     boolean existsById(@Param("id") UUID id);
 
     @Query("SELECT t FROM Tasks t WHERE t.taskStatus != 'DELETED'")
-    List<Tasks> getAllTasks();
+    Page<Tasks> getAllTasks(Pageable pageable);
 }

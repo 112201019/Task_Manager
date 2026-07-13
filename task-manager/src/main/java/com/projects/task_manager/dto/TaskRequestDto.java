@@ -22,6 +22,4 @@ public class TaskRequestDto {
 
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
     private LocalDateTime dueDate;
-
-    private UUID userId;
 }

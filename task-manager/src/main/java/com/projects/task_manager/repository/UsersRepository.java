@@ -2,6 +2,8 @@ package com.projects.task_manager.repository;
 
 import com.projects.task_manager.dto.UserDto;
 import com.projects.task_manager.entity.Users;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -17,7 +19,7 @@ public interface UsersRepository extends JpaRepository<Users, UUID> {
     Optional<Users> findById(@Param("id") UUID id);
 
     @Query("SELECT u FROM Users u")
-    List<Users> findAll();
+    Page<Users> findAll(Pageable pageable);
 
     @Modifying
     @Query("DELETE FROM Users u WHERE u.userId = :id")

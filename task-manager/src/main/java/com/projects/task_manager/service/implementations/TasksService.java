@@ -11,6 +11,9 @@ import com.projects.task_manager.service.TasksServiceInterface;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -27,10 +30,8 @@ public class TasksService implements TasksServiceInterface{
 
     //create new tasks
     @Transactional
-    public void createNewTask(TaskRequestDto request){
-        UUID userId = request.getUserId();
-
-        Users user = UsersRepository.findById(request.getUserId())
+    public void createNewTask(TaskRequestDto request, UUID userId){
+        Users user = UsersRepository.findById(userId) // UPDATED
                 .orElseThrow(() -> new EntityNotFoundException("User not found with ID: " + userId));
 
         LocalDateTime finalDueDate = request.getDueDate();
@@ -166,9 +167,10 @@ public class TasksService implements TasksServiceInterface{
     }
 
     @Override
-    public List<TaskDto> getAllTasksAdmin() {
-        return tasksRepository.getAllTasks().stream().map(
-                task -> new TaskDto(
+    public Page<TaskDto> getAllTasksAdmin(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return tasksRepository.getAllTasks(pageable)
+                .map(task -> new TaskDto(
                         task.getTaskId(),
                         task.getTitle(),
                         task.getDescription(),
@@ -176,8 +178,8 @@ public class TasksService implements TasksServiceInterface{
                         task.getTaskStatus(),
                         task.isRecurring(),
                         task.getDueDate(),
-                        task.getUser().getUserId())
-                ).toList();
+                        task.getUser().getUserId()
+                ));
     }
 
 

@@ -31,6 +31,15 @@ public class SecurityConfig {
         http
                 .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.disable())
+                .headers(headers -> headers
+                        .httpStrictTransportSecurity(hsts -> hsts
+                                .includeSubDomains(true)
+                                .maxAgeInSeconds(31536000)) // Force HTTPS for 1 year
+                        .frameOptions(frame -> frame.deny()) // Prevent Clickjacking
+                        .xssProtection(xss -> xss.disable()) // Disabled in favor of CSP
+                        .contentSecurityPolicy(csp -> csp
+                                .policyDirectives("default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'"))
+                )
                 .authorizeHttpRequests(auth -> auth
                         // NEW: Added /api/auth/refresh to the public allowlist
                         .requestMatchers("/api/users/register", "/api/auth/login", "/api/auth/refresh").permitAll()

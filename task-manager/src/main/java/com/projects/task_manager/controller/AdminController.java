@@ -9,6 +9,7 @@ import com.projects.task_manager.service.TasksServiceInterface;
 import com.projects.task_manager.service.UserServiceInterface;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
@@ -32,14 +33,29 @@ public class AdminController {
     private final TasksServiceInterface tasksService;
 
     @GetMapping("/dashboard")
-    public ResponseEntity<Map<String, Object>> adminDashboard(){
+    public ResponseEntity<Map<String, Object>> adminDashboard(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+
         log.info("Entered /admin/dashboard api in admincontroller");
-        List<UserDto> allUsers = usersService.getAllUsers();
-        List<TaskDto> allTasks = tasksService.getAllTasksAdmin();
+
+        // Fetch paginated results
+        Page<UserDto> usersPage = usersService.getAllUsers(page, size);
+        Page<TaskDto> tasksPage = tasksService.getAllTasksAdmin(page, size);
+
         Map<String, Object> response = new HashMap<>();
-        response.put("users", allUsers);
-        response.put("tasks", allTasks);
-        log.info("dashboard loaded.");
+
+        // .getContent() extracts the raw list so frontend data.users.forEach() still works flawlessly
+        response.put("users", usersPage.getContent());
+        response.put("tasks", tasksPage.getContent());
+
+        // Expose pagination metadata for the frontend to build "Next/Prev" buttons
+        response.put("usersCurrentPage", usersPage.getNumber());
+        response.put("usersTotalPages", usersPage.getTotalPages());
+        response.put("tasksCurrentPage", tasksPage.getNumber());
+        response.put("tasksTotalPages", tasksPage.getTotalPages());
+
+        log.info("Dashboard loaded with pagination data.");
         return ResponseEntity.ok(response);
     }
 
