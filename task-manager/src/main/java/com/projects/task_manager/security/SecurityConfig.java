@@ -24,7 +24,7 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtRequestFilter jwtRequestFilter;
-
+    private final LoginRateLimitFilter loginRateLimitFilter;
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
@@ -37,6 +37,7 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .addFilterBefore(loginRateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }

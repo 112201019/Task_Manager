@@ -1,8 +1,8 @@
 const API = 'http://localhost:8080/api';
 const token = localStorage.getItem('jwt_token');
 if (!token) window.location.href = 'index.html';
-const headers = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token };
 
+const headers = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token };
 let currentEditUserId = null;
 let currentEditTaskId = null;
 
@@ -18,31 +18,75 @@ async function loadDashboard() {
     document.getElementById('adminContent').style.display = 'flex';
     const data = await res.json();
 
+    // Safely Build Users Table
     const uTable = document.getElementById('usersTable');
-    uTable.innerHTML = '';
+    uTable.innerHTML = ''; // Safe to wipe
     data.users.forEach(u => {
-        uTable.innerHTML += `<tr>
-            <td><small>${u.userId}</small></td>
-            <td>${u.username}</td>
-            <td>${u.email}</td>
-            <td>
-                <button class="inline-btn" onclick="promptEditUser('${u.userId}', '${u.username}', '${u.email}')">Edit</button>
-                <button class="inline-btn" onclick="adminDeleteUser('${u.userId}')">Delete</button>
-            </td>
-        </tr>`;
+        const tr = document.createElement('tr');
+        
+        const tdId = document.createElement('td');
+        tdId.innerHTML = `<small>${u.userId}</small>`; // UUID is system generated
+
+        const tdUser = document.createElement('td');
+        tdUser.textContent = u.username; // SAFE TEXT CONTENT
+
+        const tdEmail = document.createElement('td');
+        tdEmail.textContent = u.email; // SAFE TEXT CONTENT
+
+        const tdAction = document.createElement('td');
+        
+        const editBtn = document.createElement('button');
+        editBtn.className = 'inline-btn';
+        editBtn.textContent = 'Edit';
+        editBtn.addEventListener('click', () => promptEditUser(u.userId, u.username, u.email));
+
+        const delBtn = document.createElement('button');
+        delBtn.className = 'inline-btn';
+        delBtn.textContent = 'Delete';
+        delBtn.style.marginLeft = '5px';
+        delBtn.addEventListener('click', () => adminDeleteUser(u.userId));
+
+        tdAction.appendChild(editBtn);
+        tdAction.appendChild(delBtn);
+
+        tr.appendChild(tdId);
+        tr.appendChild(tdUser);
+        tr.appendChild(tdEmail);
+        tr.appendChild(tdAction);
+
+        uTable.appendChild(tr);
     });
 
+    // Safely Build Tasks Table
     const tTable = document.getElementById('tasksTable');
     tTable.innerHTML = '';
     data.tasks.forEach(t => {
-        tTable.innerHTML += `<tr>
-            <td><small>${t.taskId}</small></td>
-            <td>${t.title}</td>
-            <td><small>${t.userId}</small></td>
-            <td>
-                <button class="inline-btn" onclick="adminDeleteTask('${t.taskId}')">Delete</button>
-            </td>
-        </tr>`;
+        const tr = document.createElement('tr');
+
+        const tdId = document.createElement('td');
+        tdId.innerHTML = `<small>${t.taskId}</small>`; // UUID
+
+        const tdTitle = document.createElement('td');
+        tdTitle.textContent = t.title; // SAFE TEXT CONTENT
+
+        const tdOwner = document.createElement('td');
+        tdOwner.innerHTML = `<small>${t.userId}</small>`; // UUID
+
+        const tdAction = document.createElement('td');
+        
+        const delBtn = document.createElement('button');
+        delBtn.className = 'inline-btn';
+        delBtn.textContent = 'Delete';
+        delBtn.addEventListener('click', () => adminDeleteTask(t.taskId));
+
+        tdAction.appendChild(delBtn);
+
+        tr.appendChild(tdId);
+        tr.appendChild(tdTitle);
+        tr.appendChild(tdOwner);
+        tr.appendChild(tdAction);
+
+        tTable.appendChild(tr);
     });
 }
 

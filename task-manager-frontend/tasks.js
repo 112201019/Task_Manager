@@ -1,6 +1,5 @@
 const API = 'http://localhost:8080/api';
 const token = localStorage.getItem('jwt_token');
-
 if (!token) window.location.href = 'index.html';
 
 const headers = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token };
@@ -49,11 +48,11 @@ async function loadTasks() {
         const aIsFinished = (a.taskStatus === 'DONE' || a.taskStatus === 'OVERDUE') ? 1 : 0;
         const bIsFinished = (b.taskStatus === 'DONE' || b.taskStatus === 'OVERDUE') ? 1 : 0;
         if (aIsFinished !== bIsFinished) return aIsFinished - bIsFinished;
-
+        
         const pA = priorityWeight[a.taskPriority] || 5;
         const pB = priorityWeight[b.taskPriority] || 5;
         if (pA !== pB) return pA - pB;
-
+        
         if (!a.dueDate && !b.dueDate) return 0;
         if (!a.dueDate) return 1;
         if (!b.dueDate) return -1;
@@ -61,70 +60,120 @@ async function loadTasks() {
     });
     
     const list = document.getElementById('taskList');
-    list.innerHTML = tasks.length ? '' : '<p>No tasks found.</p>';
+    list.innerHTML = ''; // Safe to clear with innerHTML
+    
+    if (!tasks.length) {
+        list.innerHTML = '<p>No tasks found.</p>';
+        return;
+    }
     
     tasks.forEach(t => {
-        let statusDropdownHtml = '';
+        // 1. Create the container
+        const card = document.createElement('div');
+        card.className = 'task-card';
+
+        // 2. Create the Title (SAFE TEXT CONTENT)
+        const titleEl = document.createElement('h4');
+        titleEl.style.margin = '0 0 10px 0';
+        titleEl.textContent = t.title;
+
+        // 3. Create the Description (SAFE TEXT CONTENT)
+        const descEl = document.createElement('p');
+        descEl.style.margin = '0 0 10px 0';
+        descEl.textContent = t.description || '';
+
+        // 4. Create the Status Dropdown Safely
+        const statusSelect = document.createElement('select');
+        statusSelect.className = 'inline-btn';
+        statusSelect.addEventListener('change', (e) => updateStatus(t.taskId, e.target.value));
+
         if (t.taskStatus === 'OVERDUE') {
-            statusDropdownHtml = `
+            statusSelect.innerHTML = `
             <option value="OVERDUE" disabled selected>Overdue (Action Required)</option>
-            <option value="DONE">Done</option>
-            `;
+            <option value="DONE">Done</option>`;
+        } else if (t.recurring && t.taskStatus === 'DONE') {
+            statusSelect.innerHTML = `
+            <option value="DONE" selected>Done</option>
+            <option value="IN_PROGRESS" disabled>In Progress (Locked)</option>
+            <option value="TO_DO" disabled>To Do (Locked)</option>`;
+        } else if (t.recurring && t.taskStatus === 'OVERDUE') {
+            statusSelect.innerHTML = `
+            <option value="OVERDUE" disabled selected>Overdue (Action Required)</option>
+            <option value="DONE">Done</option>`;
         } else {
-            if(t.recurring && t.taskStatus === 'DONE'){
-                statusDropdownHtml = `
-                <option value="DONE" selected>Done</option>
-                <option value="IN_PROGRESS" disabled>In Progress (Locked)</option>
-                <option value="TO_DO" disabled>To Do (Locked)</option>
-                `;       
-            }
-            else if (t.recurring && t.taskStatus === 'OVERDUE') {
-                statusDropdownHtml = `
-                <option value="OVERDUE" disabled selected>Overdue (Action Required)</option>
-                <option value="DONE">Done</option>
-                `;
-            }
-            else{
-                statusDropdownHtml = `
-                <option value="TO_DO" ${t.taskStatus === 'TO_DO' ? 'selected' : ''}>To Do</option>
-                <option value="IN_PROGRESS" ${t.taskStatus === 'IN_PROGRESS' ? 'selected' : ''}>In Progress</option>
-                <option value="DONE" ${t.taskStatus === 'DONE' ? 'selected' : ''}>Done</option>
-                `;
-            }
-            
+            statusSelect.innerHTML = `
+            <option value="TO_DO" ${t.taskStatus === 'TO_DO' ? 'selected' : ''}>To Do</option>
+            <option value="IN_PROGRESS" ${t.taskStatus === 'IN_PROGRESS' ? 'selected' : ''}>In Progress</option>
+            <option value="DONE" ${t.taskStatus === 'DONE' ? 'selected' : ''}>Done</option>`;
         }
-        var repeatText = t.recurring ? `<br><small><b>Daily Recurring Task</b></small>` : '';
-        
+
+        // 5. Assemble the Metadata Bar
+        const metaDiv = document.createElement('div');
+
+        const pSmall = document.createElement('small');
+        pSmall.innerHTML = `Priority: <b>${t.taskPriority}</b> | `; // System enum, safe to inject
+        metaDiv.appendChild(pSmall);
+
+        const sSmall = document.createElement('small');
+        sSmall.textContent = 'Status: ';
+        sSmall.appendChild(statusSelect);
+        sSmall.appendChild(document.createTextNode(' | '));
+        metaDiv.appendChild(sSmall);
+
         const formattedDate = t.dueDate 
             ? new Date(t.dueDate).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) 
             : 'No Date Set';
+        const dSmall = document.createElement('small');
+        dSmall.innerHTML = `Due: <b>${formattedDate}</b>`;
+        metaDiv.appendChild(dSmall);
 
-
-        let editButtonHtml = '';
-        if (t.recurring && t.taskStatus === 'DONE') {
-            editButtonHtml = `<button class="inline-btn" disabled style="background-color: #ddd; color: #888; cursor: not-allowed; border-color: #ccc;">Locked</button>`;
-            repeatText = `<br><small><i>Recurring tasks cannot be edited once completed.</i></small>`;
-        } else {
-            editButtonHtml = `<button class="inline-btn" onclick="setupEdit('${t.taskId}', '${t.title.replace(/'/g, "\\'")}', '${(t.description || '').replace(/'/g, "\\'")}', '${t.taskPriority}', ${t.recurring}, '${t.dueDate}')">Edit</button>`;
+        if (t.recurring) {
+            const repeatText = document.createElement('div');
+            repeatText.innerHTML = '<br><small><b>Daily Recurring Task</b></small>';
+            metaDiv.appendChild(repeatText);
         }
 
-        list.innerHTML += `
-            <div class="task-card">
-                <h4 style="margin:0 0 10px 0">${t.title}</h4>
-                <p style="margin:0 0 10px 0">${t.description}</p>
-                <small>Priority: <b>${t.taskPriority}</b></small> | 
-                <small>Status: 
-                    <select class="inline-btn" onchange="updateStatus('${t.taskId}', this.value)">
-                        ${statusDropdownHtml}
-                    </select>
-                </small> | 
-                <small>Due: <b>${formattedDate}</b></small>
-                ${repeatText}
-                <hr>
-                ${editButtonHtml} <!-- Dynamically injected Edit or Locked button -->
-                <button class="inline-btn" onclick="deleteTask('${t.taskId}')">Delete</button>
-            </div>
-        `;
+        const hr = document.createElement('hr');
+        const controlsDiv = document.createElement('div');
+        const delBtn = document.createElement('button');
+        delBtn.className = 'inline-btn';
+        delBtn.textContent = 'Delete';
+        delBtn.style.marginLeft = '5px';
+        delBtn.addEventListener('click', () => deleteTask(t.taskId));
+        // 6. Create Buttons Safely (Event Listeners prevent quote breakouts)
+        if (t.recurring && t.taskStatus === 'DONE') {
+            const lockBtn = document.createElement('button');
+            lockBtn.className = 'inline-btn';
+            lockBtn.disabled = true;
+            lockBtn.style = 'background-color: #ddd; color: #888; cursor: not-allowed; border-color: #ccc;';
+            lockBtn.textContent = 'Locked';
+            
+            const lockMsg = document.createElement('span');
+            lockMsg.innerHTML = '<br><small><i>Recurring tasks cannot be edited once completed.</i></small>';
+            
+            controlsDiv.appendChild(lockBtn);
+            controlsDiv.appendChild(delBtn);
+            controlsDiv.appendChild(lockMsg);
+        } else {
+            const editBtn = document.createElement('button');
+            editBtn.className = 'inline-btn';
+            editBtn.textContent = 'Edit';
+            editBtn.addEventListener('click', () => {
+                setupEdit(t.taskId, t.title, t.description, t.taskPriority, t.recurring, t.dueDate);
+            });
+            controlsDiv.appendChild(editBtn);
+            controlsDiv.appendChild(delBtn);
+
+        }
+
+        // 7. Inject everything into the card, then the list
+        card.appendChild(titleEl);
+        card.appendChild(descEl);
+        card.appendChild(metaDiv);
+        card.appendChild(hr);
+        card.appendChild(controlsDiv);
+        
+        list.appendChild(card);
     });
 }
 
@@ -167,7 +216,6 @@ function setupEdit(id, title, desc, priority, isRecurring, dueDate) {
     window.scrollTo(0, 0);
 }
 
-// NEW: Easily exit edit mode and unlock the form
 function cancelEdit() {
     editTaskId = null;
     document.getElementById('formTitle').innerText = "Add New Task";
@@ -188,7 +236,6 @@ function cancelEdit() {
     toggleDateInput(); // Reset UI
 }
 
-// FIX: saveTask now uses cancelEdit() to clean up after saving
 async function saveTask() {
     const titleVal = document.getElementById('title').value.trim();
     if (!titleVal) {
@@ -225,7 +272,7 @@ async function saveTask() {
     
     await fetch(url, { method, headers, body: JSON.stringify(payload) });
     
-    cancelEdit(); // Perfectly resets and unlocks the form!
+    cancelEdit();
     loadTasks();
 }
 
@@ -249,7 +296,7 @@ async function updateProfile() {
         showMessage("Profile updated! Please log in again to apply changes.");
         setTimeout(() => logout(), 2000);
     } else {
-        showMessage("Update failed. Username or email might be taken.");
+        showMessage("Update failed. Username or email might be taken.", "error");
     }
 }
 
@@ -261,7 +308,7 @@ async function changePassword() {
         document.getElementById('newPass').value = '';
         showMessage("Password changed successfully!");
     } else {
-        showMessage("Failed. Check old password.");
+        showMessage("Failed. Check old password.", "error");
     }
 }
 
@@ -272,9 +319,9 @@ async function deleteAccount() {
     }
 }
 
-function logout() { 
-    localStorage.removeItem('jwt_token'); 
-    window.location.href = 'index.html'; 
+function logout() {
+    localStorage.removeItem('jwt_token');
+    window.location.href = 'index.html';
 }
 
 checkAdminAccess();

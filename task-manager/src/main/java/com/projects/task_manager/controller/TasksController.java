@@ -42,7 +42,7 @@ public class TasksController {
 
     @PutMapping("/edit/{task_id}")
     public ResponseEntity<Void> updateTask(@AuthenticationPrincipal Users currentUser, @PathVariable UUID task_id, @Valid @RequestBody TaskRequestDto request){
-        if(currentUser.getUserId() == tasksService.fetchTask(task_id).getUserId()){
+        if(currentUser.getUserId().equals(tasksService.fetchTask(task_id).getUserId())){
             TaskDto t = tasksService.fetchTask(task_id);
             request.setTaskStatus(t.getTaskStatus());
             request.setUserId(t.getUserId());
@@ -56,7 +56,7 @@ public class TasksController {
 
     @DeleteMapping("/delete/{task_id}")
     public ResponseEntity<Void> deleteStudent(@AuthenticationPrincipal Users currentUser, @PathVariable UUID task_id){
-        if(currentUser.getUserId() == tasksService.fetchTask(task_id).getUserId()){
+        if(currentUser.getUserId().equals(tasksService.fetchTask(task_id).getUserId())){
             tasksService.deleteTask(task_id);
             return ResponseEntity.noContent().build();
         }
@@ -67,7 +67,7 @@ public class TasksController {
 
     @PatchMapping("/update-status/{task_id}")
     public ResponseEntity<Void> updateStatus(@AuthenticationPrincipal Users currentUser, @RequestBody TaskStatusUpdateDto taskStatus, @PathVariable UUID task_id){
-        if(currentUser.getUserId() == tasksService.fetchTask(task_id).getUserId()){
+        if(currentUser.getUserId().equals(tasksService.fetchTask(task_id).getUserId())){
             TaskDto existingTask = tasksService.fetchTask(task_id);
             TaskRequestDto taskRequest = new TaskRequestDto();
             taskRequest.setTitle(existingTask.getTitle());

@@ -13,13 +13,25 @@ async function login() {
     };
     try {
         const res = await fetch(`${API_BASE}/auth/login`, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/json' }, 
+            body: JSON.stringify(payload)
         });
-        if (!res.ok) return showMessage("Login failed! Check credentials.");
+        if (!res.ok) {
+            if (res.status === 429) {
+                const errData = await res.json();
+                return showMessage(errData.error, 'error'); 
+            }
+            else{
+                return showMessage("Login failed! Check credentials.", 'error');
+            }
+        }
         const data = await res.json();
         localStorage.setItem('jwt_token', data.token);
         window.location.href = 'tasks.html';
-    } catch (e) { showMessage("Server error!"); }
+    } catch (e) { 
+        showMessage("Server error!", 'error'); 
+    }
 }
 
 async function register() {
