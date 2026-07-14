@@ -1,20 +1,23 @@
 const API = 'http://localhost:8080/api';
-if (!localStorage.getItem('jwt_token')) window.location.href = 'index.html';
 
-let currentEditUserId = null;
+let currentAccessToken = null;
+let editTaskId = null; 
 
 async function apiFetch(endpoint, options = {}) {
-    let token = localStorage.getItem('jwt_token');
-    
     options.headers = {
         ...options.headers,
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + token
+        'Content-Type': 'application/json'
     };
+
+    if (currentAccessToken) {
+        options.headers['Authorization'] = 'Bearer ' + currentAccessToken;
+    }
 
     let response = await fetch(`${API}${endpoint}`, options);
 
     if (response.status === 401 || response.status === 403) {
+        console.log("Token missing or expired. Attempting silent refresh...");
+        
         const refreshResponse = await fetch(`${API}/auth/refresh`, {
             method: 'POST',
             credentials: 'include' 
@@ -22,12 +25,12 @@ async function apiFetch(endpoint, options = {}) {
 
         if (refreshResponse.ok) {
             const data = await refreshResponse.json();
-            localStorage.setItem('jwt_token', data.token);
+            currentAccessToken = data.token;
             
-            options.headers['Authorization'] = 'Bearer ' + data.token;
+            options.headers['Authorization'] = 'Bearer ' + currentAccessToken;
             response = await fetch(`${API}${endpoint}`, options);
         } else {
-            localStorage.removeItem('jwt_token');
+            console.error("Session completely expired. Logging out.");
             window.location.href = 'index.html';
         }
     }

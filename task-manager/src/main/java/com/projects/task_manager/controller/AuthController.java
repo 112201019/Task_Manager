@@ -13,13 +13,14 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -39,7 +40,7 @@ public class AuthController {
     private final TokenDenylistService tokenDenylistService;
 
     @PostMapping("/login")
-    public ResponseEntity<Map<String, String>> login(@RequestBody AuthRequestDto request, HttpServletResponse response) {
+    public ResponseEntity<Map<String, String>> login(@Valid @RequestBody AuthRequestDto request, HttpServletResponse response) {
         String rawIdentifier = request.getLoginIdentifier();
 
         String cacheIdentifier = rawIdentifier != null ? rawIdentifier.trim().toLowerCase() : "";
@@ -51,7 +52,6 @@ public class AuthController {
         }
 
         try {
-            // Keep using rawIdentifier for the DB authentication
             UsernamePasswordAuthenticationToken authenticationToken =
                     new UsernamePasswordAuthenticationToken(rawIdentifier, request.getPassword());
             Authentication authentication = authenticationManagerBuilder.getObject().authenticate(authenticationToken);
@@ -62,45 +62,66 @@ public class AuthController {
             String jwt = jwtUtil.generateToken(user);
 
             RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getUserId());
-            Cookie refreshCookie = new Cookie("refresh_token", refreshToken.getToken());
-            refreshCookie.setHttpOnly(true);
-            refreshCookie.setSecure(false);
-            refreshCookie.setPath("/");
-            refreshCookie.setMaxAge(7 * 24 * 60 * 60);
-            response.addCookie(refreshCookie);
-
+            // Build the secure Spring ResponseCookie
+            ResponseCookie springCookie = ResponseCookie.from("refresh_token", refreshToken.getToken())
+                    .httpOnly(true)
+                    .secure(false)
+                    .path("/api/auth")
+                    .maxAge(7 * 24 * 60 * 60)
+                    .sameSite("Strict")
+                    .build();
             Map<String, String> resBody = new HashMap<>();
             resBody.put("token", jwt);
-            return ResponseEntity.ok(resBody);
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.SET_COOKIE, springCookie.toString())
+                    .body(resBody);
 
         } catch (BadCredentialsException e) {
-            loginAttemptService.loginFailed(cacheIdentifier); // Use cacheIdentifier
+            loginAttemptService.loginFailed(cacheIdentifier);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("error", "Invalid credentials"));
         }
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<?> refreshToken(HttpServletRequest request) {
+    public ResponseEntity<?> refreshToken(HttpServletRequest request, HttpServletResponse response) {
         String refreshTokenString = getRefreshTokenFromCookies(request);
-
         if (refreshTokenString == null) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Refresh token missing. Please log in."));
         }
 
         Optional<RefreshToken> tokenOpt = refreshTokenService.findByToken(refreshTokenString);
-
         if (tokenOpt.isPresent()) {
-            RefreshToken token = tokenOpt.get();
+            RefreshToken oldToken = tokenOpt.get();
             try {
-                refreshTokenService.verifyExpiration(token);
-                String newAccessToken = jwtUtil.generateToken(token.getUser());
-                return ResponseEntity.ok(Map.of("token", newAccessToken));
+                refreshTokenService.verifyExpiration(oldToken);
+                Users user = oldToken.getUser();
+
+                // 1. ROTATION: Destroy the old refresh token so it cannot be reused
+                refreshTokenService.deleteToken(oldToken);
+
+                // 2. Create a brand new refresh token
+                RefreshToken newRefreshToken = refreshTokenService.createRefreshToken(user.getUserId());
+
+                // 3. Build the secure Spring ResponseCookie
+                ResponseCookie springCookie = ResponseCookie.from("refresh_token", newRefreshToken.getToken())
+                        .httpOnly(true)
+                        .secure(false) // Keep false for localhost testing
+                        .path("/api/auth")
+                        .maxAge(7 * 24 * 60 * 60)
+                        .sameSite("Strict")
+                        .build();
+                String newAccessToken = jwtUtil.generateToken(user);
+
+                return ResponseEntity.ok()
+                        .header(HttpHeaders.SET_COOKIE, springCookie.toString())
+                        .body(Map.of("token", newAccessToken));
+
             } catch (RuntimeException e) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getMessage()));
             }
         }
-
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Invalid refresh token."));
     }
 
@@ -113,11 +134,14 @@ public class AuthController {
             });
         }
 
-        Cookie clearCookie = new Cookie("refresh_token", null);
-        clearCookie.setHttpOnly(true);
-        clearCookie.setPath("/");
-        clearCookie.setMaxAge(0);
-        response.addCookie(clearCookie);
+        // Build a secure wipe cookie
+        ResponseCookie deleteCookie = ResponseCookie.from("refresh_token", "")
+                .httpOnly(true)
+                .secure(false)
+                .path("/api/auth") // Must explicitly match the creation path to delete properly
+                .maxAge(0)
+                .sameSite("Strict")
+                .build();
 
         String authHeader = request.getHeader("Authorization");
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
@@ -134,7 +158,9 @@ public class AuthController {
             }
         }
 
-        return ResponseEntity.ok(Map.of("message", "Logged out successfully"));
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, deleteCookie.toString())
+                .body(Map.of("message", "Logged out successfully"));
     }
 
     private String getRefreshTokenFromCookies(HttpServletRequest request) {

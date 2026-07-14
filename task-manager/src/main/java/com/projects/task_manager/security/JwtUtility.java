@@ -30,8 +30,10 @@ public class JwtUtility {
         return Jwts.builder()
                 .claim("username", user.getDisplayName())
                 .subject(user.getEmail())
+                .issuer("task-manager-api")
+                .audience().add("task-manager-ui").and()
                 .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 15)) //15 minutes
+                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 15)) // Set to 15 mins
                 .signWith(key)
                 .compact();
     }
@@ -55,6 +57,8 @@ public class JwtUtility {
     private <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
         final Claims claims = Jwts.parser()
                 .verifyWith(key)
+                .requireIssuer("task-manager-api")
+                .requireAudience("task-manager-ui")
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();

@@ -30,7 +30,6 @@ async function login() {
         }
 
         const data = await res.json();
-        localStorage.setItem('jwt_token', data.token);
         window.location.href = 'tasks.html';
 
     } catch (e) {

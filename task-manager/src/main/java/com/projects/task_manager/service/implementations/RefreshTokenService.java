@@ -54,4 +54,9 @@ public class RefreshTokenService {
         // Revokes all active sessions for this user
         return refreshTokenRepository.deleteByUser(user);
     }
+
+    @Transactional
+    public void deleteToken(RefreshToken token) {
+        refreshTokenRepository.delete(token);
+    }
 }

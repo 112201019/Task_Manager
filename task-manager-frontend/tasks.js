@@ -1,20 +1,23 @@
 const API = 'http://localhost:8080/api';
-if (!localStorage.getItem('jwt_token')) window.location.href = 'index.html';
-let editTaskId = null;
+
+// NEW: Store the token strictly in application memory
+let currentAccessToken = null;
+let editTaskId = null; 
 
 async function apiFetch(endpoint, options = {}) {
-    let token = localStorage.getItem('jwt_token');
-    
     options.headers = {
         ...options.headers,
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + token
+        'Content-Type': 'application/json'
     };
+
+    if (currentAccessToken) {
+        options.headers['Authorization'] = 'Bearer ' + currentAccessToken;
+    }
 
     let response = await fetch(`${API}${endpoint}`, options);
 
     if (response.status === 401 || response.status === 403) {
-        console.log("Access token expired. Attempting silent refresh...");
+        console.log("Token missing or expired. Attempting silent refresh...");
         
         const refreshResponse = await fetch(`${API}/auth/refresh`, {
             method: 'POST',
@@ -23,28 +26,16 @@ async function apiFetch(endpoint, options = {}) {
 
         if (refreshResponse.ok) {
             const data = await refreshResponse.json();
-            localStorage.setItem('jwt_token', data.token);
+            currentAccessToken = data.token;
             
-            options.headers['Authorization'] = 'Bearer ' + data.token;
+            options.headers['Authorization'] = 'Bearer ' + currentAccessToken;
             response = await fetch(`${API}${endpoint}`, options);
         } else {
-            console.error("Session completely expired.");
-            localStorage.removeItem('jwt_token');
+            console.error("Session completely expired. Logging out.");
             window.location.href = 'index.html';
         }
     }
     return response;
-}
-
-// --- JWT DECODER ---
-try {
-    const token = localStorage.getItem('jwt_token');
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    document.getElementById('displayUsername').innerText = payload.username;
-    document.getElementById('editUsername').value = payload.username;
-    document.getElementById('editEmail').value = payload.sub; 
-} catch (e) {
-    console.error("Invalid token format");
 }
 
 // --- ADMIN CHECK ---
@@ -55,6 +46,26 @@ async function checkAdminAccess() {
             document.getElementById('adminBtn').style.display = 'inline-block';
         }
     } catch (e) { console.error(e); }
+}
+
+async function loadUserProfile() {
+    try {
+        const res = await apiFetch('/users/me');
+        if (res.ok) {
+            const user = await res.json();
+            
+            // Safely inject the username into the welcome message
+            document.getElementById('displayUsername').textContent = user.username;
+            
+            // Pre-fill the "Edit Profile" inputs so they aren't blank
+            if (document.getElementById('editUsername')) {
+                document.getElementById('editUsername').value = user.username;
+                document.getElementById('editEmail').value = user.email;
+            }
+        }
+    } catch (e) {
+        console.error("Failed to load user profile", e);
+    }
 }
 
 function toggleDateInput() {
@@ -351,7 +362,6 @@ async function deleteTask(id) {
     }
 }
 
-// --- USER API ---
 async function updateProfile() {
     const payload = { username: document.getElementById('editUsername').value, email: document.getElementById('editEmail').value };
     const res = await apiFetch(`/users/edit`, { method: 'PATCH', body: JSON.stringify(payload) });
@@ -387,22 +397,27 @@ async function logout() {
         await fetch(`${API}/auth/logout`, { 
             method: 'POST',
             headers: {
-                'Authorization': 'Bearer ' + localStorage.getItem('jwt_token')
+                'Authorization': 'Bearer ' + currentAccessToken
             },
             credentials: 'include' 
         });
     } catch (e) {
-        console.error("Logout request failed, cleaning up locally.");
+        console.error("Logout request failed.");
     } finally {
-        localStorage.removeItem('jwt_token');
+        currentAccessToken = null;
         window.location.href = 'index.html';
     }
 }
 
-checkAdminAccess();
-loadTasks();
+async function initializeDashboard() {
+    // Await forces it to finish the silent refresh and save the token to memory
+    await loadTasks(); 
+    await loadUserProfile(); 
+    await checkAdminAccess(); 
+}
 
-// --- TOAST MESSENGER ---
+initializeDashboard();
+
 function showMessage(message, type = 'success') {
     const toast = document.getElementById('notificationBox');
     toast.innerText = message;
