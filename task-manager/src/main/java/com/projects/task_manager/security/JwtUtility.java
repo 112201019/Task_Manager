@@ -31,7 +31,7 @@ public class JwtUtility {
                 .claim("username", user.getDisplayName())
                 .subject(user.getEmail())
                 .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 1)) //1 minute
+                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 15)) //15 minutes
                 .signWith(key)
                 .compact();
     }

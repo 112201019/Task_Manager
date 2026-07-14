@@ -40,17 +40,14 @@ public class AdminController {
 
         log.info("Entered /admin/dashboard api in admincontroller");
 
-        // Fetch paginated results
         Page<UserDto> usersPage = usersService.getAllUsers(page, size);
         Page<TaskDto> tasksPage = tasksService.getAllTasksAdmin(page, size);
 
         Map<String, Object> response = new HashMap<>();
 
-        // .getContent() extracts the raw list so frontend data.users.forEach() still works flawlessly
         response.put("users", usersPage.getContent());
         response.put("tasks", tasksPage.getContent());
 
-        // Expose pagination metadata for the frontend to build "Next/Prev" buttons
         response.put("usersCurrentPage", usersPage.getNumber());
         response.put("usersTotalPages", usersPage.getTotalPages());
         response.put("tasksCurrentPage", tasksPage.getNumber());

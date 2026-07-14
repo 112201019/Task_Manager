@@ -10,6 +10,7 @@ import com.projects.task_manager.service.implementations.TokenDenylistService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -34,43 +35,46 @@ public class AuthController {
     private final AuthenticationManagerBuilder authenticationManagerBuilder;
     private final LoginAttemptService loginAttemptService;
     private final JwtUtility jwtUtil;
-    private final RefreshTokenService refreshTokenService; // NEW: Injecting our service
+    private final RefreshTokenService refreshTokenService;
     private final TokenDenylistService tokenDenylistService;
+
     @PostMapping("/login")
     public ResponseEntity<Map<String, String>> login(@RequestBody AuthRequestDto request, HttpServletResponse response) {
-        String identifier = request.getLoginIdentifier();
+        String rawIdentifier = request.getLoginIdentifier();
 
-        if (loginAttemptService.isBlocked(identifier)) {
-            log.warn("Login blocked by Redis cache for: {}", identifier);
+        String cacheIdentifier = rawIdentifier != null ? rawIdentifier.trim().toLowerCase() : "";
+
+        if (loginAttemptService.isBlocked(cacheIdentifier)) {
+            log.warn("Login blocked by Redis cache for: {}", cacheIdentifier);
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                     .body(Map.of("error", "Account locked due to multiple failed attempts. Try again in 15 minutes."));
         }
 
         try {
+            // Keep using rawIdentifier for the DB authentication
             UsernamePasswordAuthenticationToken authenticationToken =
-                    new UsernamePasswordAuthenticationToken(identifier, request.getPassword());
+                    new UsernamePasswordAuthenticationToken(rawIdentifier, request.getPassword());
             Authentication authentication = authenticationManagerBuilder.getObject().authenticate(authenticationToken);
 
-            loginAttemptService.loginSucceeded(identifier);
+            loginAttemptService.loginSucceeded(cacheIdentifier);
 
             Users user = (Users) authentication.getPrincipal();
             String jwt = jwtUtil.generateToken(user);
 
-            // NEW: Generate Refresh Token and attach as HttpOnly Cookie
             RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getUserId());
             Cookie refreshCookie = new Cookie("refresh_token", refreshToken.getToken());
-            refreshCookie.setHttpOnly(true); // Protects against XSS
-            refreshCookie.setSecure(false); // Set to true in production if using HTTPS!
-            refreshCookie.setPath("/"); // Only send cookie to auth endpoints
-            refreshCookie.setMaxAge(7 * 24 * 60 * 60); // 7 days in seconds
+            refreshCookie.setHttpOnly(true);
+            refreshCookie.setSecure(false);
+            refreshCookie.setPath("/");
+            refreshCookie.setMaxAge(7 * 24 * 60 * 60);
             response.addCookie(refreshCookie);
 
             Map<String, String> resBody = new HashMap<>();
-            resBody.put("token", jwt); // Send the short-lived token to be kept in JS memory
+            resBody.put("token", jwt);
             return ResponseEntity.ok(resBody);
 
         } catch (BadCredentialsException e) {
-            loginAttemptService.loginFailed(identifier);
+            loginAttemptService.loginFailed(cacheIdentifier); // Use cacheIdentifier
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("error", "Invalid credentials"));
         }
@@ -90,7 +94,6 @@ public class AuthController {
             RefreshToken token = tokenOpt.get();
             try {
                 refreshTokenService.verifyExpiration(token);
-                // Token is valid, generate a new short-lived access token
                 String newAccessToken = jwtUtil.generateToken(token.getUser());
                 return ResponseEntity.ok(Map.of("token", newAccessToken));
             } catch (RuntimeException e) {
@@ -103,7 +106,6 @@ public class AuthController {
 
     @PostMapping("/logout")
     public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) {
-        // 1. Invalidate the long-lived Refresh Token in PostgreSQL
         String refreshTokenString = getRefreshTokenFromCookies(request);
         if (refreshTokenString != null) {
             refreshTokenService.findByToken(refreshTokenString).ifPresent(token -> {
@@ -111,14 +113,12 @@ public class AuthController {
             });
         }
 
-        // 2. Clear the HttpOnly Cookie from the browser
         Cookie clearCookie = new Cookie("refresh_token", null);
         clearCookie.setHttpOnly(true);
         clearCookie.setPath("/");
         clearCookie.setMaxAge(0);
         response.addCookie(clearCookie);
 
-        // 3. Push the short-lived Access Token to the Redis Denylist
         String authHeader = request.getHeader("Authorization");
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String jwt = authHeader.substring(7);
@@ -127,7 +127,6 @@ public class AuthController {
                 long timeToLive = expiration.getTime() - System.currentTimeMillis();
 
                 if (timeToLive > 0) {
-                    // This service needs to be injected into the AuthController via constructor
                     tokenDenylistService.addToDenylist(jwt, timeToLive);
                 }
             } catch (Exception e) {
@@ -138,7 +137,6 @@ public class AuthController {
         return ResponseEntity.ok(Map.of("message", "Logged out successfully"));
     }
 
-    // Helper method to extract the cookie
     private String getRefreshTokenFromCookies(HttpServletRequest request) {
         if (request.getCookies() != null) {
             for (Cookie cookie : request.getCookies()) {

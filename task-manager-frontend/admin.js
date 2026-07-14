@@ -53,11 +53,13 @@ async function loadDashboard() {
         const tr = document.createElement('tr');
         
         const tdId = document.createElement('td');
-        tdId.innerHTML = `<small>${u.userId}</small>`; // UUID is system generated
+        const smallUserId = document.createElement('small');
+        smallUserId.textContent = u.userId;
+        tdId.appendChild(smallUserId);
         const tdUser = document.createElement('td');
-        tdUser.textContent = u.username; // SAFE TEXT CONTENT
+        tdUser.textContent = u.username; 
         const tdEmail = document.createElement('td');
-        tdEmail.textContent = u.email; // SAFE TEXT CONTENT
+        tdEmail.textContent = u.email; 
         const tdAction = document.createElement('td');
         
         const editBtn = document.createElement('button');
@@ -88,11 +90,17 @@ async function loadDashboard() {
         const tr = document.createElement('tr');
 
         const tdId = document.createElement('td');
-        tdId.innerHTML = `<small>${t.taskId}</small>`; // UUID
+        const smallTaskId = document.createElement('small');
+        smallTaskId.textContent = t.taskId;
+        tdId.appendChild(smallTaskId);
+
         const tdTitle = document.createElement('td');
-        tdTitle.textContent = t.title; // SAFE TEXT CONTENT
+        tdTitle.textContent = t.title;
+
         const tdOwner = document.createElement('td');
-        tdOwner.innerHTML = `<small>${t.userId}</small>`; // UUID
+        const smallOwnerId = document.createElement('small');
+        smallOwnerId.textContent = t.userId;
+        tdOwner.appendChild(smallOwnerId);
         const tdAction = document.createElement('td');
         
         const delBtn = document.createElement('button');

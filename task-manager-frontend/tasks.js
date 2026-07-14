@@ -119,48 +119,72 @@ async function loadTasks() {
         statusSelect.className = 'inline-btn';
         statusSelect.addEventListener('change', (e) => updateStatus(t.taskId, e.target.value));
 
+        // Helper function to create options safely
+        const addOption = (val, text, isSelected, isDisabled) => {
+            const opt = document.createElement('option');
+            opt.value = val;
+            opt.textContent = text;
+            if (isSelected) opt.selected = true;
+            if (isDisabled) opt.disabled = true;
+            statusSelect.appendChild(opt);
+        };
+
         if (t.taskStatus === 'OVERDUE') {
-            statusSelect.innerHTML = `
-            <option value="OVERDUE" disabled selected>Overdue (Action Required)</option>
-            <option value="DONE">Done</option>`;
+            addOption('OVERDUE', 'Overdue (Action Required)', true, true);
+            addOption('DONE', 'Done', false, false);
         } else if (t.recurring && t.taskStatus === 'DONE') {
-            statusSelect.innerHTML = `
-            <option value="DONE" selected>Done</option>
-            <option value="IN_PROGRESS" disabled>In Progress (Locked)</option>
-            <option value="TO_DO" disabled>To Do (Locked)</option>`;
+            addOption('DONE', 'Done', true, false);
+            addOption('IN_PROGRESS', 'In Progress (Locked)', false, true);
+            addOption('TO_DO', 'To Do (Locked)', false, true);
         } else if (t.recurring && t.taskStatus === 'OVERDUE') {
-            statusSelect.innerHTML = `
-            <option value="OVERDUE" disabled selected>Overdue (Action Required)</option>
-            <option value="DONE">Done</option>`;
+            addOption('OVERDUE', 'Overdue (Action Required)', true, true);
+            addOption('DONE', 'Done', false, false);
         } else {
-            statusSelect.innerHTML = `
-            <option value="TO_DO" ${t.taskStatus === 'TO_DO' ? 'selected' : ''}>To Do</option>
-            <option value="IN_PROGRESS" ${t.taskStatus === 'IN_PROGRESS' ? 'selected' : ''}>In Progress</option>
-            <option value="DONE" ${t.taskStatus === 'DONE' ? 'selected' : ''}>Done</option>`;
+            addOption('TO_DO', 'To Do', t.taskStatus === 'TO_DO', false);
+            addOption('IN_PROGRESS', 'In Progress', t.taskStatus === 'IN_PROGRESS', false);
+            addOption('DONE', 'Done', t.taskStatus === 'DONE', false);
         }
 
-        // 5. Assemble the Metadata Bar
+        // 5. Assemble the Metadata Bar Safely
         const metaDiv = document.createElement('div');
+        
+        // Priority
         const pSmall = document.createElement('small');
-        pSmall.innerHTML = `Priority: <b>${t.taskPriority}</b> | `; 
+        pSmall.textContent = 'Priority: ';
+        const bPriority = document.createElement('b');
+        bPriority.textContent = t.taskPriority;
+        pSmall.appendChild(bPriority);
+        pSmall.appendChild(document.createTextNode(' | '));
         metaDiv.appendChild(pSmall);
 
+        // Status
         const sSmall = document.createElement('small');
         sSmall.textContent = 'Status: ';
         sSmall.appendChild(statusSelect);
         sSmall.appendChild(document.createTextNode(' | '));
         metaDiv.appendChild(sSmall);
 
+        // Due Date
         const formattedDate = t.dueDate 
-            ? new Date(t.dueDate).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) 
-            : 'No Date Set';
+             ? new Date(t.dueDate).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) 
+             : 'No Date Set';
+        
         const dSmall = document.createElement('small');
-        dSmall.innerHTML = `Due: <b>${formattedDate}</b>`;
+        dSmall.textContent = 'Due: ';
+        const bDate = document.createElement('b');
+        bDate.textContent = formattedDate;
+        dSmall.appendChild(bDate);
         metaDiv.appendChild(dSmall);
 
+        // Recurring Tag
         if (t.recurring) {
             const repeatText = document.createElement('div');
-            repeatText.innerHTML = '<br><small><b>Daily Recurring Task</b></small>';
+            repeatText.appendChild(document.createElement('br'));
+            const smallRecur = document.createElement('small');
+            const bRecur = document.createElement('b');
+            bRecur.textContent = 'Daily Recurring Task';
+            smallRecur.appendChild(bRecur);
+            repeatText.appendChild(smallRecur);
             metaDiv.appendChild(repeatText);
         }
 
@@ -181,8 +205,14 @@ async function loadTasks() {
             lockBtn.style = 'background-color: #ddd; color: #888; cursor: not-allowed; border-color: #ccc;';
             lockBtn.textContent = 'Locked';
             
+            // Safe Lock Message
             const lockMsg = document.createElement('span');
-            lockMsg.innerHTML = '<br><small><i>Recurring tasks cannot be edited once completed.</i></small>';
+            lockMsg.appendChild(document.createElement('br'));
+            const smallLock = document.createElement('small');
+            const iLock = document.createElement('i');
+            iLock.textContent = 'Recurring tasks cannot be edited once completed.';
+            smallLock.appendChild(iLock);
+            lockMsg.appendChild(smallLock);
             
             controlsDiv.appendChild(lockBtn);
             controlsDiv.appendChild(delBtn);

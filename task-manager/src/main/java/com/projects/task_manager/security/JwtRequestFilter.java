@@ -22,7 +22,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
 
     private final CustomuserDetailsService userDetailsService;
     private final JwtUtility jwtUtil;
-    private final TokenDenylistService tokenDenylistService; // NEW INJECTION
+    private final TokenDenylistService tokenDenylistService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
@@ -35,12 +35,11 @@ public class JwtRequestFilter extends OncePerRequestFilter {
         if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
             jwt = authorizationHeader.substring(7);
 
-            // NEW: Instantly reject if the token is in the Redis denylist
             if (tokenDenylistService.isDenied(jwt)) {
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 response.getWriter().write("{\"error\": \"Token has been revoked. Please log in again.\"}");
                 response.setContentType("application/json");
-                return; // Stop the filter chain immediately
+                return;
             }
 
             try {

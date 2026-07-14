@@ -20,7 +20,6 @@ public class RefreshTokenService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final UsersRepository usersRepository;
 
-    // Setting the refresh token lifespan to 7 days
     private static final long REFRESH_TOKEN_EXPIRATION_DAYS = 7;
 
     public RefreshToken createRefreshToken(UUID userId) {
@@ -38,7 +37,6 @@ public class RefreshTokenService {
 
     public RefreshToken verifyExpiration(RefreshToken token) {
         if (token.getExpiryDate().isBefore(LocalDateTime.now())) {
-            // If expired, wipe it from the database immediately
             refreshTokenRepository.delete(token);
             throw new RuntimeException("Refresh token is expired. Please sign in again.");
         }

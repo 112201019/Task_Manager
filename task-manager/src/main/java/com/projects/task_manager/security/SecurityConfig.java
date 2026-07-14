@@ -34,9 +34,9 @@ public class SecurityConfig {
                 .headers(headers -> headers
                         .httpStrictTransportSecurity(hsts -> hsts
                                 .includeSubDomains(true)
-                                .maxAgeInSeconds(31536000)) // Force HTTPS for 1 year
-                        .frameOptions(frame -> frame.deny()) // Prevent Clickjacking
-                        .xssProtection(xss -> xss.disable()) // Disabled in favor of CSP
+                                .maxAgeInSeconds(31536000))
+                        .frameOptions(frame -> frame.deny())
+                        .xssProtection(xss -> xss.disable())
                         .contentSecurityPolicy(csp -> csp
                                 .policyDirectives("default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'"))
                 )
