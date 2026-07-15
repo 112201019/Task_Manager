@@ -64,7 +64,7 @@ public class TasksController {
     }
 
     @PatchMapping("/update-status/{task_id}")
-    public ResponseEntity<Void> updateStatus(@AuthenticationPrincipal Users currentUser, @RequestBody TaskStatusUpdateDto taskStatus, @PathVariable UUID task_id){
+    public ResponseEntity<Void> updateStatus(@AuthenticationPrincipal Users currentUser, @Valid @RequestBody TaskStatusUpdateDto taskStatus, @PathVariable UUID task_id){
         if(currentUser.getUserId().equals(tasksService.fetchTask(task_id).getUserId())){
             TaskDto existingTask = tasksService.fetchTask(task_id);
             TaskRequestDto taskRequest = new TaskRequestDto();

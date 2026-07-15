@@ -374,14 +374,24 @@ async function updateProfile() {
 }
 
 async function changePassword() {
-    const payload = { oldPassword: document.getElementById('oldPass').value, newPassword: document.getElementById('newPass').value };
-    const res = await apiFetch(`/users/change-password`, { method: 'PATCH', body: JSON.stringify(payload) });
+    const payload = { 
+        oldPassword: document.getElementById('oldPass').value, 
+        newPassword: document.getElementById('newPass').value 
+    };
+    
+    const res = await apiFetch(`/users/change-password`, { 
+        method: 'PATCH', 
+        body: JSON.stringify(payload) 
+    });
+    
     if (res.ok) {
         document.getElementById('oldPass').value = '';
         document.getElementById('newPass').value = '';
         showMessage("Password changed successfully!");
     } else {
-        showMessage("Failed. Check old password.", "error");
+        const errData = await res.json();
+        
+        showMessage(errData.message || "Failed. Check old password.", "error");
     }
 }
 
@@ -431,3 +441,15 @@ function showMessage(message, type = 'success') {
         toast.style.display = 'none';
     }, 3000);
 }
+
+// --- EVENT LISTENERS ---
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('adminBtn')?.addEventListener('click', () => window.location.href = 'admin.html');
+    document.getElementById('logoutBtn')?.addEventListener('click', logout);
+    document.getElementById('updateProfileBtn')?.addEventListener('click', updateProfile);
+    document.getElementById('changePasswordBtn')?.addEventListener('click', changePassword);
+    document.getElementById('deleteAccountBtn')?.addEventListener('click', deleteAccount);
+    document.getElementById('isRecurring')?.addEventListener('change', toggleDateInput);
+    document.getElementById('saveBtn')?.addEventListener('click', saveTask);
+    document.getElementById('cancelBtn')?.addEventListener('click', cancelEdit);
+});

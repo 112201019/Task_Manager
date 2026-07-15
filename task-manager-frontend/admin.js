@@ -156,3 +156,9 @@ function cancelAdminEdit(boxId) {
 }
 
 loadDashboard();
+// --- EVENT LISTENERS ---
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('backToTasksBtn')?.addEventListener('click', () => window.location.href = 'tasks.html');
+    document.getElementById('saveAdminUserBtn')?.addEventListener('click', saveAdminUser);
+    document.getElementById('cancelAdminEditBtn')?.addEventListener('click', () => cancelAdminEdit('adminEditUserBox'));
+});

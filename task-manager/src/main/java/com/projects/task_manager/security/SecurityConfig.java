@@ -38,7 +38,7 @@ public class SecurityConfig {
                         .frameOptions(frame -> frame.deny())
                         .xssProtection(xss -> xss.disable())
                         .contentSecurityPolicy(csp -> csp
-                                .policyDirectives("default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'"))
+                                .policyDirectives("default-src 'self'; script-src 'self'; style-src 'self'"))
                 )
                 .authorizeHttpRequests(auth -> auth
                         // NEW: Added /api/auth/refresh to the public allowlist

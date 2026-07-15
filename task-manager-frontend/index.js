@@ -77,3 +77,10 @@ function showMessage(message, type = 'success') {
         toast.style.display = 'none';
     }, 3000);
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('loginBtn')?.addEventListener('click', login);
+    document.getElementById('registerBtn')?.addEventListener('click', register);
+    document.getElementById('showRegisterBtn')?.addEventListener('click', () => toggleView('registerBox'));
+    document.getElementById('showLoginBtn')?.addEventListener('click', () => toggleView('loginBox'));
+});

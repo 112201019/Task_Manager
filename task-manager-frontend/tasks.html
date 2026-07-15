@@ -14,8 +14,8 @@
     </style>
 </head>
 <body>
-    <div id="notificationBox" 
-    style="
+    <div id="notificationBox"
+     style="
         display: none; 
         position: fixed;    
         top: 20px; 
@@ -26,14 +26,15 @@
         font-weight: bold; 
         z-index: 1000; 
         box-shadow: 0 4px 6px rgba(0,0,0,0.3); 
-        transition: opacity 0.3s;" > </div>
+        transition: opacity 0.3s;" >
+</div>
         <!-- for notification box -->
-         
+        
     <div class="header-bar">
         <h2>Welcome, <span id="displayUsername" style="color: #444;">User</span>!</h2>
         <div>
-            <button id="adminBtn" class="inline-btn" onclick="window.location.href='admin.html'" style="display: none; background-color: #ffd700;">Admin Panel</button>
-            <button class="inline-btn" onclick="logout()">Logout</button>
+            <button id="adminBtn" class="inline-btn" style="display: none; background-color: #ffd700;">Admin Panel</button>
+            <button id="logoutBtn" class="inline-btn">Logout</button>
         </div>
     </div>
 
@@ -46,14 +47,14 @@
             <h4>Update Profile</h4>
             <input type="text" id="editUsername" placeholder="New Username">
             <input type="email" id="editEmail" placeholder="New Email">
-            <button onclick="updateProfile()">Update Profile</button>
+            <button id="updateProfileBtn">Update Profile</button>
             <hr>
             <h4>Change Password</h4>
             <input type="password" id="oldPass" placeholder="Old Password">
             <input type="password" id="newPass" placeholder="New Password">
-            <button onclick="changePassword()">Change Password</button>
+            <button id="changePasswordBtn">Change Password</button>
             <hr>
-            <button onclick="deleteAccount()" style="color: white; background-color: #ff4d4d; border: 2px solid #cc0000;">Delete My Account</button>
+            <button id="deleteAccountBtn" style="color: white; background-color: #ff4d4d; border: 2px solid #cc0000;">Delete My Account</button>
         </details>
     </div>
 
@@ -72,7 +73,7 @@
                 <option value="LOW">Low</option>
             </select>
             <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-                <input type="checkbox" id="isRecurring" style="width: auto; margin: 0;" onchange="toggleDateInput()">
+                <input type="checkbox" id="isRecurring" style="width: auto; margin: 0;">
                 <label id="recurLabel" for="isRecurring">Make this a Daily Recurring Task</label>
             </div>
             
@@ -80,8 +81,8 @@
             <input type="datetime-local" id="dueDate">
             <input type="time" id="dueTime" style="display: none;">
             
-            <button id="saveBtn" onclick="saveTask()">Save Task</button>
-            <button id="cancelBtn" onclick="cancelEdit()" style="display: none; background-color: #444; color: white;">Cancel Edit</button>
+            <button id="saveBtn">Save Task</button>
+            <button id="cancelBtn" style="display: none; background-color: #444; color: white;">Cancel Edit</button>
             <hr>
         </details>
     </div>

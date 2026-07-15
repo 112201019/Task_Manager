@@ -2,13 +2,16 @@ package com.projects.task_manager.validation;
 
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
+import lombok.extern.slf4j.Slf4j;
 
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 
+@Slf4j
 public class PasswordConstraintValidator implements ConstraintValidator<ValidPassword, String> {
 
     private static final HttpClient httpClient = HttpClient.newHttpClient();
@@ -31,7 +34,7 @@ public class PasswordConstraintValidator implements ConstraintValidator<ValidPas
     private boolean isPasswordPwned(String password) {
         try {
             MessageDigest md = MessageDigest.getInstance("SHA-1");
-            byte[] hashBytes = md.digest(password.getBytes());
+            byte[] hashBytes = md.digest(password.getBytes(StandardCharsets.UTF_8));
             StringBuilder sb = new StringBuilder();
             for (byte b : hashBytes) {
                 sb.append(String.format("%02X", b));
@@ -51,14 +54,13 @@ public class PasswordConstraintValidator implements ConstraintValidator<ValidPas
             if (response.statusCode() == 200) {
                 String[] lines = response.body().split("\\r?\\n");
                 for (String line : lines) {
-                    // The API returns lines in the format: SUFFIX:COUNT
                     if (line.startsWith(suffix)) {
-                        return true; // Password is compromised!
+                        return true;
                     }
                 }
             }
         } catch (Exception e) {
-            System.err.println("Failed to connect to HIBP API: " + e.getMessage());
+            log.warn("Failed to connect to HIBP API, failing open. Error: {}", e.getMessage());
             return false;
         }
 

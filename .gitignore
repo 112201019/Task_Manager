@@ -19,3 +19,7 @@ target/
 ####logs
 *.log
 *.gz
+
+### Environments ###
+.env
+*.env

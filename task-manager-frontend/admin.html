@@ -14,10 +14,9 @@
     <script src="admin.js"></script>
 </head>
 <body>
-
     <div class="header-bar">
         <h2>System Admin Dashboard</h2>
-        <button onclick="window.location.href='tasks.html'">Back to My Tasks</button>
+        <button id="backToTasksBtn">Back to My Tasks</button>
     </div>
 
     <div id="errorMsg" style="display:none; border: 1px solid black; padding: 20px; width: 800px;">
@@ -26,15 +25,14 @@
     </div>
 
     <div id="adminContent" style="display:none; width: 100%; display: flex; flex-direction: column; align-items: center;">
-        <div id="adminContent" style="display:none; width: 100%; display: flex; flex-direction: column; align-items: center;">
         
         <!-- ADMIN EDIT USER FORM -->
         <div id="adminEditUserBox" class="section" style="display:none; background-color: #f9f9f9;">
             <h3>Edit User</h3>
             <input type="text" id="adminEditUsername" placeholder="Username">
             <input type="email" id="adminEditEmail" placeholder="Email">
-            <button class="inline-btn" onclick="saveAdminUser()">Save User Updates</button>
-            <button class="inline-btn" onclick="cancelAdminEdit('adminEditUserBox')">Cancel</button>
+            <button id="saveAdminUserBtn" class="inline-btn">Save User Updates</button>
+            <button id="cancelAdminEditBtn" class="inline-btn">Cancel</button>
         </div>
 
         <div class="section">

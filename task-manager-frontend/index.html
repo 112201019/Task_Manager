@@ -9,11 +9,11 @@
         input, button { width: 100%; padding: 8px; margin: 10px 0; box-sizing: border-box; }
         .toggle-link { cursor: pointer; text-decoration: underline; font-size: 0.9em; }
     </style>
-    <script src="index.js"></script>
+    <script src="index.js" defer></script>
 </head>
 <body>
-    <div id="notificationBox" 
-    style="
+    <div id="notificationBox"
+     style="
         display: none; 
         position: fixed;    
         top: 20px; 
@@ -24,14 +24,16 @@
         font-weight: bold; 
         z-index: 1000; 
         box-shadow: 0 4px 6px rgba(0,0,0,0.3); 
-        transition: opacity 0.3s;" > </div>
+        transition: opacity 0.3s;" >
+</div>
         <!-- for notification box -->
+
     <div class="container" id="loginBox">
         <h2>Sign In</h2>
         <input type="text" id="loginId" placeholder="Email or Username">
         <input type="password" id="loginPass" placeholder="Password">
-        <button onclick="login()">Login</button>
-        <p class="toggle-link" onclick="toggleView('registerBox')">Need an account? Register</p>
+        <button id="loginBtn">Login</button>
+        <p class="toggle-link" id="showRegisterBtn">Need an account? Register</p>
     </div>
 
     <div class="container" id="registerBox" style="display: none;">
@@ -39,12 +41,8 @@
         <input type="text" id="regUsername" placeholder="Username">
         <input type="email" id="regEmail" placeholder="Email">
         <input type="password" id="regPass" placeholder="Password">
-        <button onclick="register()">Create Account</button>
-        <p class="toggle-link" onclick="toggleView('loginBox')">Have an account? Sign In</p>
+        <button id="registerBtn">Create Account</button>
+        <p class="toggle-link" id="showLoginBtn">Have an account? Sign In</p>
     </div>
-
-    <script>
-        
-    </script>
 </body>
 </html>
