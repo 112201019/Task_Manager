@@ -15,7 +15,7 @@ import java.util.UUID;
 
 public interface TasksRepository extends JpaRepository<Tasks, UUID> {
 
-    @Query("SELECT t FROM Tasks t WHERE t.taskId = :id")
+    @Query("SELECT t FROM Tasks t WHERE t.taskId = :id AND t.taskStatus != 'DELETED'")
     Optional<Tasks> findById(@Param("id") UUID id);
 
     @Modifying

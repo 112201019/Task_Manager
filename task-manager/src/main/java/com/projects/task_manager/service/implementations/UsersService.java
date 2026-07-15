@@ -10,6 +10,7 @@ import com.projects.task_manager.repository.TasksRepository;
 import com.projects.task_manager.repository.UsersRepository;
 import com.projects.task_manager.service.UserServiceInterface;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -18,6 +19,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -60,13 +62,15 @@ public class UsersService implements UserServiceInterface {
         Users user = UsersRepository.findById(ud.getUserId())
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
 
-        UsersRepository.findByEmailOrUsername(ud.getUsername())
+        // 1. Check if the requested username is taken by someone else
+        UsersRepository.findByUsername(ud.getUsername())
                 .ifPresent(existingUser -> {
-                    if (!existingUser.getUserId().equals(ud.getUserId()) && existingUser.getUsername().equals(ud.getUsername())) {
+                    if (!existingUser.getUserId().equals(ud.getUserId())) {
                         throw new IllegalArgumentException("Username is already in use.");
                     }
                 });
 
+        // 2. Check if the requested email is taken by someone else
         UsersRepository.findByEmail(ud.getEmail())
                 .ifPresent(existingUser -> {
                     if (!existingUser.getUserId().equals(ud.getUserId())) {
@@ -80,11 +84,21 @@ public class UsersService implements UserServiceInterface {
     }
 
     @Override
+    @Transactional // Guarantees that if tasks fail to delete, the entire operation rolls back safely
     public void deleteUser(UUID id) {
-        if (!UsersRepository.existsById(id)) {
-            throw new EntityNotFoundException("User not found");
+        Users user = UsersRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+
+        user.setDeleted(true);
+        user.setDeletedAt(LocalDateTime.now());
+
+        if (user.getTasks() != null) {
+            for (com.projects.task_manager.entity.Tasks task : user.getTasks()) {
+                task.setTaskStatus(com.projects.task_manager.entity.type.TaskStatusType.DELETED);
+            }
         }
-        UsersRepository.deleteById(id);
+
+        UsersRepository.save(user);
     }
     @Override
     public Page<UserDto> getAllUsers(int page, int size) {

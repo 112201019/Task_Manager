@@ -1,14 +1,16 @@
 -- Create Users Table First
-CREATE TABLE IF NOT EXISTS users (
+    CREATE TABLE IF NOT EXISTS users (
     user_id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     username VARCHAR(100) NOT NULL,
     email VARCHAR(100) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
-    role VARCHAR(20) NOT NULL
+    role VARCHAR(20) NOT NULL,
+    is_deleted BOOLEAN DEFAULT FALSE NOT NULL,
+    deleted_at TIMESTAMP
     );
 
 -- Create Tasks Table
-CREATE TABLE IF NOT EXISTS tasks (
+    CREATE TABLE IF NOT EXISTS tasks (
     task_id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     title VARCHAR(100) NOT NULL,
     description TEXT,
@@ -21,7 +23,7 @@ CREATE TABLE IF NOT EXISTS tasks (
     );
 
 -- Create Refresh Tokens Table
-CREATE TABLE IF NOT EXISTS refresh_tokens (
+    CREATE TABLE IF NOT EXISTS refresh_tokens (
                                               id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     token VARCHAR(255) NOT NULL UNIQUE,
     expiry_date TIMESTAMP NOT NULL,
